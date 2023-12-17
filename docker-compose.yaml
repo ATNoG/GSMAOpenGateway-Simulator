@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+# @Author: Rafael Direito
+# @Date:   2023-12-07 11:06:19
+# @Last Modified by:   Rafael Direito
+# @Last Modified time: 2023-12-07 11:07:46
+
+version: "3.2"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - gsma_og_rabbitmq_data:/var/lib/rabbitmq/
+      - gsma_og_rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - rabbitmq_net
+
+networks:
+  rabbitmq_net:
+    driver: bridge
+
+volumes:
+  gsma_og_rabbitmq_data:
+  gsma_og_rabbitmq_logs:
