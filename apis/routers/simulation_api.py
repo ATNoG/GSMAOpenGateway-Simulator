@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 21:07:59
+# @Last Modified time: 2023-12-17 19:29:17
 # coding: utf-8
 from fastapi import APIRouter, Depends
 from schemas import simulation_schemas as SimulationSchemas
@@ -14,6 +14,7 @@ from common.database import connections_factory as DBFactory
 from common.database import crud
 from helpers import simulations as SimulationHelpers
 from helpers import message_broker as PikaHelper
+from helpers import device_location as DeviceLocationHelpers
 router = APIRouter()
 
 
@@ -98,12 +99,18 @@ async def get_simulation(
         **json.loads(json.loads(simulation.payload))
     )
 
+    # Parse Simulated Devices
+    simulated_devices = DeviceLocationHelpers\
+        .parse_payload_ues_to_simulated_ue_objects(
+            json.loads(json.loads(simulation.payload))["devices"]
+        )
+
     return SimulationSchemas.RootSimulationCreateResponse(
         id=simulation.id,
         duration_seconds=simulation.duration_seconds,
         name=simulation.name,
         description=simulation.description,
-        devices=root_simulation_from_payload.devices,
+        devices=simulated_devices,
         child_simulations=root_simulation_from_payload.child_simulations
     )
 

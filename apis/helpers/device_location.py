@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 16:54:15
+# @Last Modified time: 2023-12-17 19:29:47
 
 import utm
 from schemas.device_location_schemas import (
@@ -13,6 +13,7 @@ from schemas.device_location_schemas import (
     VerifyLocationResponse,
     VerificationResult
 )
+from schemas import simulation_schemas as SimulationSchemas
 from datetime import datetime
 from pyproj import Proj
 from fastapi.responses import JSONResponse
@@ -21,6 +22,28 @@ import config # noqa
 from common.database import models
 import hashlib
 from shapely import geometry
+
+
+def parse_payload_ues_to_simulated_ue_objects(payload_devices):
+
+    simulated_devices = []
+
+    for device in payload_devices:
+        # Start by casting the entire object
+        simulated_device = SimulationSchemas.SimulationUE(**device)
+
+        # Check for extra attributes that might not have been parsed
+        if "ipv4_address" in device:
+            simulated_device.ipv4_address.private_address = \
+                device["ipv4_address"].get("private_address")
+            simulated_device.ipv4_address.public_port = \
+                device["ipv4_address"].get("public_port")
+            simulated_device.ipv4_address.public_address = \
+                device["ipv4_address"].get("public_address")
+
+        simulated_devices.append(simulated_device)
+
+    return simulated_devices
 
 
 def generate_random_radius(latitude, longitude):

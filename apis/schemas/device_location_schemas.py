@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 13:45:06
+# @Last Modified time: 2023-12-17 19:25:55
 
 # flake8: noqa
 from __future__ import annotations
