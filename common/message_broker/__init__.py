@@ -2,19 +2,21 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 11:21:26
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 17:41:23
+# @Last Modified time: 2023-12-20 09:45:15
 
 from . import aux as Aux
 from .topics import Topics
 from . import connections_factory as Factory
 import logging
-import os
+import sys
 
 # When this module is imported, the first thing to do is to create all
 # queues/topics
 
+
+# Todo: Deal with this later
 # If under test, do not execute
-if "PYTEST_CURRENT_TEST" not in os.environ:
+if "pytest" not in sys.modules:
 
     # Create connection and channel
     consumer_connection, consumer_channel = Factory\
