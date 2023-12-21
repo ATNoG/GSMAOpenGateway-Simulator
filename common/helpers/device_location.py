@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 11:15:36
+# @Last Modified time: 2023-12-21 14:26:30
 
 import utm
 from datetime import datetime
@@ -10,7 +10,6 @@ from pyproj import Proj
 from fastapi.responses import JSONResponse
 import random
 import config # noqa
-import logging
 from common.apis import simulation_schemas as SimulationSchemas
 from common.apis.device_location_schemas import (
     Location,
@@ -18,11 +17,19 @@ from common.apis.device_location_schemas import (
     Point,
     ErrorInfo,
     VerifyLocationResponse,
-    VerificationResult
+    VerificationResult,
+    Device,
+    DeviceIpv4Addr,
+    Area,
+    Polygon,
+    Webhook,
+    SubscriptionInfo,
+    SubscriptionDetail
 )
 from common.database import models
 import hashlib
 from shapely import geometry
+import json
 
 
 def parse_payload_ues_to_simulated_ue_objects(payload_devices):
@@ -86,7 +93,7 @@ def compute_simulated_data_age(
     device_location_data: models.DeviceLocationSimulationData
 ):
     # Get the current time
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
 
     # Compute the time difference
     time_difference = current_time - device_location_data.timestamp
@@ -97,12 +104,23 @@ def compute_simulated_data_age(
 
 def error_message_simulation_not_running():
     return JSONResponse(
-            status_code=410,
+            status_code=404,
             content=ErrorInfo(
-                status=410,
+                status=404,
                 code="SIMULATION.NOT_RUNNING",
                 message="The simulation is not running. Thus, you cannot " +
                 "get its generated data"
+            ).__dict__
+        )
+
+
+def subscription_not_found():
+    return JSONResponse(
+            status_code=404,
+            content=ErrorInfo(
+                status=404,
+                code="NOT_FOUND",
+                message="The specified resource is not found"
             ).__dict__
         )
 
@@ -215,3 +233,58 @@ def shapely_polygon_from_area(area):
         return shapely_polygon_from_list_of_coordinates_points(
             coordinates_points=area.boundary
         )
+
+
+def parse_simulation_ue_to_pydantic_device(
+    simulation_ue: models.SimulationUE
+) -> Device:
+    ipv4_address = DeviceIpv4Addr(
+        publicAddress=simulation_ue.ipv4_address_public_address,
+        privateAddress=simulation_ue.ipv4_address_private_address,
+        publicPort=simulation_ue.ipv4_address_public_port
+    )
+
+    return Device(
+        phone_number=simulation_ue.phone_number,
+        network_access_identifier=simulation_ue.network_access_identifier,
+        ipv4_address=ipv4_address,
+        ipv6_address=simulation_ue.ipv6_address,
+    )
+
+
+def parse_area_dict_to_pydantic_area(
+    area_dict
+) -> Area:
+    return Circle(**area_dict) if area_dict["area_type"] == "circle" \
+        else Polygon(**area_dict)
+
+
+def pydantic_subscription_info_from_db_subscription(
+    db_subscription, simulated_device_from_db
+):
+    # Recreate the Webhook Object
+    webook = Webhook(
+        notificationUrl=db_subscription.webhook_url,
+        notificationAuthToken=db_subscription.webhook_auth_token
+    )
+
+    device = parse_simulation_ue_to_pydantic_device(
+        simulated_device_from_db
+    )
+
+    subscription_detail = SubscriptionDetail(
+        device=device,
+        area=parse_area_dict_to_pydantic_area(
+            json.loads(json.loads(db_subscription.area))
+        ),
+        type=db_subscription.subscription_type
+    )
+
+    return SubscriptionInfo(
+        webhook=webook,
+        subscription_detail=subscription_detail,
+        subscription_expire_time=db_subscription.expire_time,
+        subscription_id=db_subscription.id,
+        starts_at=db_subscription.start_time,
+        expires_at=db_subscription.expire_time
+    )

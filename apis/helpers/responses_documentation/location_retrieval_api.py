@@ -2,11 +2,11 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 19:47:52
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-14 19:50:06
+# @Last Modified time: 2023-12-19 11:55:36
 
 # flake8: noqa
-
-from schemas.device_location_schemas import (
+import config #noqa
+from common.apis.device_location_schemas import (
     Location,
     ErrorInfo,
 )

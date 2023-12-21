@@ -49,7 +49,7 @@ run_device_location_verification_api:
     uvicorn main:device_location_verification_app --reload --port 8002
 
 # Device Location Geofencing API
-run_device_location_verification_api:
+run_device_location_geofencing_api:
 	source venv/bin/activate && \
 	cd apis && \
      echo -e "\nLaunching FastAPI server for the Device Location Geofencing API...\n" && \

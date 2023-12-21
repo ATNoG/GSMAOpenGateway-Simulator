@@ -2,15 +2,17 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-15 11:45:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 19:52:52
+# @Last Modified time: 2023-12-19 18:38:17
 
+import config # noqa
 import pytest
-from gsma_open_gw_simulator.apis.helpers import (
+from common.helpers import (
     device_location as DeviceLocationHelper
 )
-from schemas.device_location_schemas import (
+from common.apis.device_location_schemas import (
     VerificationResult
 )
+
 
 
 @pytest.mark.parametrize(

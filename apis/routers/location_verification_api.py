@@ -2,22 +2,22 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 14:15:29
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 16:55:26
+# @Last Modified time: 2023-12-21 11:36:47
 # coding: utf-8
 from fastapi import APIRouter, Body, Header, Depends
-from schemas.device_location_schemas import (
-    VerifyLocationRequest
-)
+
 import config # noqa
 from sqlalchemy.orm import Session
 import logging
-from helpers import device_location as DeviceLocationHelper
+from common.helpers import device_location as DeviceLocationHelper
 from helpers.responses_documentation.location_verification_api import (
     LocationVerificationResponses
 )
 from common.database import connections_factory as DBFactory
 from common.database import crud
-
+from common.apis.device_location_schemas import (
+    VerifyLocationRequest
+)
 router = APIRouter()
 
 
@@ -43,7 +43,7 @@ async def verify_location(
         return DeviceLocationHelper.error_message_simulation_not_running()
 
     # Get the Simulated UE ID
-    simulated_ue = crud.get_simulated_device_from_root_simulation(
+    simulated_ue = crud.get_simulated_device_instance_from_root_simulation(
         db=db,
         root_simulation_id=simulation_id,
         device=verify_location_request.device
@@ -81,20 +81,9 @@ async def verify_location(
         radius_meters=radius
     )
 
-    # Filter according to the area type
-    if verify_location_request.area.area_type == "circle":
-        shapely_desired_area = DeviceLocationHelper\
-            .shapely_circle_from_coordinates_circle(
-                center_latitude=verify_location_request.area.center.latitude,
-                center_longitude=verify_location_request.area.center.longitude,
-                radius_meters=verify_location_request.area.radius
-            )
-    # else -> its a polygon
-    else:
-        shapely_desired_area = DeviceLocationHelper\
-            .shapely_polygon_from_list_of_coordinates_points(
-                coordinates_points=verify_location_request.area.boundary
-            )
+    shapely_desired_area = DeviceLocationHelper.shapely_polygon_from_area(
+        area=verify_location_request.area
+    )
 
     verification_result = DeviceLocationHelper\
         .compute_location_verification_result(

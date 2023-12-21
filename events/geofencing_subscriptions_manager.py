@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 14:36:32
+# @Last Modified time: 2023-12-20 16:26:57
 import config # noqa
 import logging
 from common.message_broker.schemas import (
@@ -25,6 +25,7 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
 
     def handle_ue_location_message(self, simulation_data: SimulationData):
 
+        # Todo: Check only the valid subscritions (get its expiry time)
         simulation_instance = simulation_data.simulation_id
         
         for subscription in self.get_subscriptions(simulation_instance):

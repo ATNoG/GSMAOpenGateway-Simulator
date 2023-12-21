@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-19 18:07:01
+# @Last Modified time: 2023-12-21 13:03:53
 
 # flake8: noqa
 from __future__ import annotations
@@ -352,17 +352,18 @@ class EventSubscriptionEnds(BaseModel):
     )
 
 
-class SubscriptionCreationEventType(BaseModel):
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+class SubscriptionCreationEventType(Enum):
+    AREA_ENTERED = "org.camaraproject.geofencing.v0.area-entered"
+    AREA_LEFT = "org.camaraproject.geofencing.v0.area-left"
+    SUBSCRIPTION_ENDS = "org.camaraproject.geofencing.v0.subscription-ends"
+
 
 
 class SubscriptionDetail(BaseModel):
 
     device: Device = Field(alias="device")
-    area: Area = Field(alias="area")
+    area: Union[Circle, Polygon] = Field(alias="area")
     type: SubscriptionCreationEventType = Field(alias="type")
 
     model_config = ConfigDict(
@@ -373,7 +374,7 @@ class SubscriptionDetail(BaseModel):
 class SubscriptionEnds(BaseModel):
 
     device: Device = Field(alias="device")
-    area: Area = Field(alias="area")
+    area: Union[Circle, Polygon] = Field(alias="area")
     termination_reason: TerminationReason = Field(alias="terminationReason")
     subscription_id: str = Field(alias="subscriptionId")
 
@@ -435,7 +436,6 @@ TerminationReason.model_rebuild()
 SubscriptionInfo.model_rebuild()
 SubscriptionEnds.model_rebuild()
 SubscriptionDetail.model_rebuild()
-SubscriptionCreationEventType.model_rebuild()
 EventSubscriptionEnds.model_rebuild()
 EventAreaLeft.model_rebuild()
 EventAreaEntered.model_rebuild()

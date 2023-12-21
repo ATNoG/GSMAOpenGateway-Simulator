@@ -2,19 +2,19 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 19:29:17
+# @Last Modified time: 2023-12-21 10:58:44
 # coding: utf-8
 from fastapi import APIRouter, Depends
-from schemas import simulation_schemas as SimulationSchemas
 import json
 from sqlalchemy.orm import Session
 import logging
 import config # noqa
+from common.apis import simulation_schemas as SimulationSchemas
 from common.database import connections_factory as DBFactory
 from common.database import crud
 from helpers import simulations as SimulationHelpers
 from helpers import message_broker as PikaHelper
-from helpers import device_location as DeviceLocationHelpers
+from common.helpers import device_location as DeviceLocationHelpers
 router = APIRouter()
 
 
@@ -52,6 +52,7 @@ async def create_simulation(
         name=root_simulation.name,
         description=root_simulation.description,
         duration_seconds=duration_seconds,
+        devices=root_simulation.devices,
         payload=json.dumps(root_simulation.model_dump_json())
     )
     
@@ -176,6 +177,8 @@ async def delete_simulation(
     # Todo: What if the simulation does not exist?
     if not simulation:
         pass
+
+    # Todo: implement the deletion -> CASCADE DELETION
 
     root_simulation_from_payload = SimulationSchemas.RootSimulationCreate(
         **json.loads(json.loads(simulation.payload))

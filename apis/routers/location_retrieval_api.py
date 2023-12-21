@@ -2,15 +2,15 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-14 20:23:08
+# @Last Modified time: 2023-12-21 11:36:42
 # coding: utf-8
 
 import config # noqa
 from fastapi import APIRouter, Body, Header, Depends
 from sqlalchemy.orm import Session
 import logging
-from schemas.device_location_schemas import RetrievalLocationRequest
-from helpers import device_location as DeviceLocationHelper
+from common.apis.device_location_schemas import RetrievalLocationRequest
+from common.helpers import device_location as DeviceLocationHelper
 from helpers.responses_documentation.location_retrieval_api import (
     LocationRetrievalResponses
 )
@@ -43,7 +43,7 @@ async def retrieve_location(
         return DeviceLocationHelper.error_message_simulation_not_running()
 
     # Get the Simulated UE ID
-    simulated_ue = crud.get_simulated_device_from_root_simulation(
+    simulated_ue = crud.get_simulated_device_instance_from_root_simulation(
         db=db,
         root_simulation_id=simulation_id,
         device=retrieval_location_request.device
