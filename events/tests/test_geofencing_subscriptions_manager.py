@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-21 21:09:28
+# @Last Modified time: 2023-12-22 22:29:57
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -29,69 +29,81 @@ def get_simulated_data():
     return [
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.67809867905849,
                 longitude=-17.622633942472735,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         ),
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.77298854063671,
                 longitude=-17.13037010791792,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         ),
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.44551578131866,
                 longitude=-17.259338468442383,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         ),
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.69540592103866,
                 longitude=-16.99218572668454,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         ),
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.73397576083184,
                 longitude=-16.824103575407136,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         ),
         SimulationData(
             simulation_id=1,
-            child_simulation_id=1,
+            simulation_instance_id=1,
+            child_simulation_instance_id=1,
             simulation_type=SimulationType.DEVICE_LOCATION,
             data=DeviceLocationSimulationData(
                 ue=1,
+                ue_instance=1,
                 latitude=32.316487028304884,
                 longitude=-16.50248551307069,
                 timestamp=datetime.utcnow().strftime(strftime_format)
-            )
+            ).__dict__
         )
     ]
 

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-15 11:45:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-19 18:38:17
+# @Last Modified time: 2023-12-22 22:26:45
 
 import config # noqa
 import pytest
@@ -12,7 +12,6 @@ from common.helpers import (
 from common.apis.device_location_schemas import (
     VerificationResult
 )
-
 
 
 @pytest.mark.parametrize(
