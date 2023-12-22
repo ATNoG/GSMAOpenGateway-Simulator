@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 19:47:52
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-19 11:55:36
+# @Last Modified time: 2023-12-22 21:51:27
 
 # flake8: noqa
 import config #noqa

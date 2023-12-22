@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 16:16:49
+# @Last Modified time: 2023-12-22 21:45:30
 # coding: utf-8
 
 from fastapi import FastAPI, Request, status
@@ -210,57 +210,63 @@ device_location_geofencing_app = FastAPI(
     title="Device geofencing API",
     description=(
         "API to create, retrieve, and delete event subscriptions "
-        "for geofencing a user device. # Introduction With this "
+        "for geofencing a user device. \n\n# Introduction\n\nWith this "
         "API, customers can create subscriptions for their devices "
         "to receive notifications when a device enters or exits a "
-        "specified area. The area provided in the request is "
+        "specified area.\n\nThe area provided in the request is "
         "described by a circle determined by coordinates (latitude "
-        "and longitude) and an accuracy defined by the radius. Upon "
+        "and longitude) and an accuracy defined by the radius.\n\nUpon "
         "successfully creating a subscription, the API will provide "
         "an Event Subscription ID, and it will indicate the "
-        "subscription's expiration date. If the geofencing-state of "
+        "subscription's expiration date.\n\nIf the geofencing-state of "
         "a device changes, the event subscriber will be notified "
         "back to the provided Notification-Url given by the "
-        "subscription-request. Device geofencing API could be useful "
-        "in scenarios such as: - Tracking devices for Presetting of "
-        "Home-Settings - Tracking of logistics # Relevant terms and "
-        "definitions * **Device**: A device refers to any physical "
+        "subscription-request.\n\nDevice geofencing API could be useful "
+        "in scenarios such as:\n\n- Tracking devices for Presetting of "
+        "Home-Settings\n\n- Tracking of logistics\n\n# Relevant terms and "
+        "definitions\n\n* **Device**: A device refers to any physical "
         "entity that can connect to a network and participate in "
-        "network communication. * **Area**: It specifies the "
+        "network communication.\n\n* **Area**: It specifies the "
         "geographical surface which a device is planned to enter or "
-        "exit. # API Functionality The API exposes the following "
-        "capabilities: ## Device Geofencing subscription These "
+        "exit.\n\n# API Functionality\n\nThe API exposes the following "
+        "capabilities:\n\n## Device Geofencing subscription\n\nThese "
         "endpoints allow managing event subscription on geofencing "
-        "device location event. The CAMARA subscription model is "
+        "device location event.\n\nThe CAMARA subscription model is "
         "detailed in the CAMARA API design guideline document and "
-        "follows CloudEvents specification. It is mandatory in the "
-        "subscription to provide the event 'type' for which the "
-        "client would like to subscribe. Following event 'type' are "
-        "managed for this API: - "
-        "'org.camaraproject.geofencing.v0.area-entered' - Event "
-        "triggered when the device enters the given area - "
-        "'org.camaraproject.geofencing.v0.area-left' - Event "
-        "triggered when the device leaves the given area Note: "
+        "follows CloudEvents specification.\n\nIt is mandatory in the "
+        "subscription to provide the event `type` for which the "
+        "client would like to subscribe.\n\nFollowing event`type` are "
+        "managed for this API:\n\n- "
+        "`org.camaraproject.geofencing.v0.area-entered` - Event "
+        "triggered when the device enters the given area\n\n- "
+        "`org.camaraproject.geofencing.v0.area-left` - Event "
+        "triggered when the device leaves the given area\n\nNote: "
         "Additionally to these lists, "
-        "'org.camaraproject.geofencing.v0.subscription-ends' "
-        "notification 'type' is sent when the subscription ends. "
+        "`org.camaraproject.geofencing.v0.subscription-ends` "
+        "notification `type` is sent when the subscription ends. "
         "This notification does not require a dedicated subscription. "
         "It is used when the subscription expiration time (required "
         "by the requester) has been reached or if the API server has "
-        "to stop sending notification prematurely. ### Notification "
-        "callback This endpoint describes the event notification "
+        "to stop sending notification prematurely.\n\n### Notification "
+        "callback\n\nThis endpoint describes the event notification "
         "received on the subscription listener side when the event "
         "occurred. As for the subscription, detailed description of "
         "the event notification is provided in the CAMARA API design "
-        "guideline document. **WARNING**: This callback endpoint "
+        "guideline document.\n\n**WARNING**: This callback endpoint "
         "must be exposed on the consumer side as "
-        "'POST /{$request.body#/webhook/notificationUrl}'. Developers "
+        "`POST /{$request.body#/webhook/notificationUrl}`. Developers "
         "may provide a callback URL on which notifications regarding "
         "geofencing can be received from the service provider. If an "
         "event occurs, the application will send events to the "
-        "provided webhook - 'notificationUrl'. # Further info and "
-        "support (FAQs will be added in a later version of the "
-        "documentation)"
+        "provided webhook - 'notificationUrl'.\n\n# Further info and "
+        "support\n\n(FAQs will be added in a later version of the "
+        "documentation)\n\n"
+        "[Terms of service](http://swagger.io/terms/?_ga=2.111714564.1249190"
+        "960.1703280247-990327894.1703280247)\n\n"
+        "[Contact the developer](mailto:project-email@sample.com)\n\n"
+        "[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)\n\n"
+        "[Product documentation at Camara](https://github.com/camaraproject"
+        "/)\n\n"
     ),
     version="0.1.0-rc",
     openapi_url=device_location_geofencing_app_prefix + open_api_json_path,
@@ -277,7 +283,7 @@ device_location_geofencing_app.include_router(
 # Custom Exception Handlers
 @device_location_verification_app.exception_handler(RequestValidationError)
 @device_location_retrieval_app.exception_handler(RequestValidationError)
-#@device_location_geofencing_app.exception_handler(RequestValidationError)
+@device_location_geofencing_app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ):

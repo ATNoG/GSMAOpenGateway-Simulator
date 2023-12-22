@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:09:16
+# @Last Modified time: 2023-12-22 22:01:32
 
 # flake8: noqa
 from __future__ import annotations
@@ -25,7 +25,7 @@ class Circle(Area):
                 "latitude":40.6295718,
                 "longitude":-8.6569065,
             })
-    radius: float = Field(alias="radius")
+    radius: float = Field(alias="radius", example="10")
 
     @validator("radius")
     def radius_min(cls, value):
@@ -285,7 +285,10 @@ class CreateSubscription(BaseModel):
 
     webhook: Webhook = Field(alias="webhook")
     subscription_detail: SubscriptionDetail = Field(alias="subscriptionDetail")
-    subscription_expire_time: Optional[datetime] = Field(alias="subscriptionExpireTime", default=None)
+    subscription_expire_time: Optional[datetime] = Field(
+        alias="subscriptionExpireTime", default=None,
+        example="2023-12-22T21:37:54.016Z"
+    )
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -394,11 +397,17 @@ class SubscriptionInfo(BaseModel):
     webhook: Webhook = Field(alias="webhook")
     subscription_detail: SubscriptionDetail = Field(alias="subscriptionDetail")
     subscription_expire_time: Optional[datetime] = Field(
-        alias="subscriptionExpireTime", default=None
+        alias="subscriptionExpireTime", default=None,
+        example="2023-12-22T21:37:54.016Z"
     )
-    subscription_id: str = Field(alias="subscriptionId")
-    starts_at: Optional[datetime] = Field(alias="startsAt", default=None)
-    expires_at: Optional[datetime] = Field(alias="expiresAt", default=None)
+    subscription_id: str = Field(
+        alias="subscriptionId", example="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
+    starts_at: Optional[datetime] = Field(
+        alias="startsAt", default=None,  example="2023-12-20T21:37:54.016Z")
+    expires_at: Optional[datetime] = Field(
+        alias="expiresAt", default=None,  example="2023-12-22T21:37:54.016Z"
+        )
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -414,8 +423,13 @@ class TerminationReason(BaseModel):
 
 class Webhook(BaseModel):
 
-    notification_url: str = Field(alias="notificationUrl")
-    notification_auth_token: Optional[str] = Field(alias="notificationAuthToken", default=None)
+    notification_url: str = Field(
+        alias="notificationUrl", example="https://application-server.com"
+    )
+    notification_auth_token: Optional[str] = Field(
+        alias="notificationAuthToken", default=None,
+        example="c8974e592c2fa383d4a3960714"
+    )
 
     model_config = ConfigDict(
         populate_by_name=True,

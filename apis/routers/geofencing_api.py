@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 12:13:53
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:09:55
+# @Last Modified time: 2023-12-22 22:24:52
 # coding: utf-8
 
 import config # noqa
@@ -23,6 +23,9 @@ from common.message_broker import schemas as MessageBrokerSchemas
 from common.database import connections_factory as DBFactory
 from common.apis import device_location_schemas as DeviceLocationSchemas
 from common.helpers import device_location as DeviceLocationHelpers
+from helpers.responses_documentation.geofencing_api import (
+    GeofencingResponses
+)
 from helpers import message_broker as PikaHelper
 from common.database import crud
 import copy
@@ -32,27 +35,17 @@ router = APIRouter()
 
 @router.post(
     "/subscriptions",
-    responses={
-        # Todo: Deal with responses later
-        201: {"model": SubscriptionInfo,
-              "description": "Created (Successful creation of subscription)"},
-        400: {"model": ErrorInfo, "description": "Invalid argument"},
-        401: {"model": ErrorInfo, "description": "Unauthenticated"},
-        403: {"model": ErrorInfo, "description": "Permission denied"},
-        409: {"model": ErrorInfo, "description": "Conflict"},
-        500: {"model": ErrorInfo, "description": "Internal server error"},
-        503: {"model": ErrorInfo, "description": "Service unavailable"},
-    },
+    responses=GeofencingResponses.POST_GEOFENCE_SUBSCRIPTION,
     tags=["Geofencing subscriptions"],
     summary="Create a geofencing subscription for a device",
     response_model_by_alias=True,
+    status_code=201
 )
 async def create_subscription(
     simulation_id: int = Header(),
     create_subscription: CreateSubscription = Body(),
     db: Session = Depends(DBFactory.get_db_session)
-) -> SubscriptionInfo:
-    
+):
     # Todo: If simulation was not created, you need to create it, in 
     # Todo: order to register the UES
 
@@ -115,23 +108,20 @@ async def create_subscription(
         expires_at=created_subscription.expire_time
     )
 
-    return subscription_info
+    return Response(
+        status_code=status.HTTP_201_CREATED,
+        content=subscription_info.model_dump_json(),
+        media_type="application/json"
+    )
 
 
 @router.delete(
     "/subscriptions/{subscription_id}",
-    responses={
-        204: {"description": "Event subscription deleted"},
-        400: {"model": ErrorInfo, "description": "Invalid argument"},
-        401: {"model": ErrorInfo, "description": "Unauthenticated"},
-        403: {"model": ErrorInfo, "description": "Permission denied"},
-        404: {"model": ErrorInfo, "description": "Not found"},
-        500: {"model": ErrorInfo, "description": "Internal server error"},
-        503: {"model": ErrorInfo, "description": "Service unavailable"},
-    },
+    responses=GeofencingResponses.DELETE_GEOFENCE_SUBSCRIPTION,
     tags=["Geofencing subscriptions"],
     summary="Operation to delete a subscription",
     response_model_by_alias=True,
+    status_code=204
 )
 async def delete_subscription(
     simulation_id: int = Header(),
@@ -194,22 +184,12 @@ async def delete_subscription(
 
     # Send message to the events module
     PikaHelper.send_events_messages(message_to_send_to_events_module)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
     "/subscriptions/{subscription_id}",
-    responses={
-        200: {"model": SubscriptionInfo,
-              "description": "Contains information about Subscriptions"},
-        400: {"model": ErrorInfo, "description": "Invalid argument"},
-        401: {"model": ErrorInfo, "description": "Unauthenticated"},
-        403: {"model": ErrorInfo, "description": "Permission denied"},
-        404: {"model": ErrorInfo, "description": "Not found"},
-        500: {"model": ErrorInfo, "description": "Internal server error"},
-        503: {"model": ErrorInfo, "description": "Service unavailable"},
-    },
+    responses=GeofencingResponses.GET_GEOFENCE_SUBSCRIPTION,
     tags=["Geofencing subscriptions"],
     summary="Operation to retrieve a subscription based on the provided ID",
     response_model_by_alias=True,
@@ -251,16 +231,7 @@ async def get_subscription(
 
 @router.get(
     "/subscriptions",
-    responses={
-        # Todo: Deal with responses later
-        200: {"model": List[SubscriptionInfo],
-              "description": "The list of subscriptions is retrieved."},
-        400: {"model": ErrorInfo, "description": "Invalid argument"},
-        401: {"model": ErrorInfo, "description": "Unauthenticated"},
-        403: {"model": ErrorInfo, "description": "Permission denied"},
-        500: {"model": ErrorInfo, "description": "Internal server error"},
-        503: {"model": ErrorInfo, "description": "Service unavailable"},
-    },
+    responses=GeofencingResponses.GET_GEOFENCE_SUBSCRIPTIONS,
     tags=["Geofencing subscriptions"],
     summary="Operation to retrieve a list of subscriptions.",
     response_model_by_alias=True,
