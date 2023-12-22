@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 15:13:15
+# @Last Modified time: 2023-12-21 21:09:28
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -98,7 +98,7 @@ def get_simulated_data():
 
 def test_if_area_related_events_are_being_triggered(mocker):
     area_entered_geofencing_subscription = GeofencingSubscription(
-        subscription_id=1,
+        subscription_id="1",
         subscription_type=SubscriptionType.DEVICE_LOCATION_GEOFENCING,
         simulation_id=1,
         area=Circle(
@@ -119,7 +119,7 @@ def test_if_area_related_events_are_being_triggered(mocker):
     )
 
     area_left_geofencing_subscription = GeofencingSubscription(
-        subscription_id=2,
+        subscription_id="2",
         subscription_type=SubscriptionType.DEVICE_LOCATION_GEOFENCING,
         simulation_id=1,
         area=Circle(
@@ -195,7 +195,7 @@ def test_if_area_related_events_are_being_triggered(mocker):
     [
         (
             GeofencingSubscription(
-                subscription_id=1,
+                subscription_id="1",
                 subscription_type=SubscriptionType.DEVICE_LOCATION_GEOFENCING,
                 simulation_id=1,
                 area=Circle(
@@ -219,7 +219,7 @@ def test_if_area_related_events_are_being_triggered(mocker):
         ),
         (
             GeofencingSubscription(
-                subscription_id=1,
+                subscription_id="2",
                 subscription_type=SubscriptionType.DEVICE_LOCATION_GEOFENCING,
                 simulation_id=1,
                 area=Circle(

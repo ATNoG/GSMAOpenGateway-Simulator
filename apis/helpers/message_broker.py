@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-13 14:26:29
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 21:08:03
+# @Last Modified time: 2023-12-22 10:14:09
 
 import logging
 import config # noqa
@@ -29,4 +29,21 @@ def send_simulation_messages(simulation_messages):
             f"{simulation_message.simulation_instance_id})" +
             f"to {Topics.SIMULATION.value}"
         )
+    connection.close()
+
+
+def send_events_messages(events_message):
+    connection, channel = PikaFactory.get_new_pika_connection_and_channel()
+    # Create the simulation
+    channel.basic_publish(
+        exchange='',
+        routing_key=Topics.EVENTS.value,
+        body=events_message.model_dump_json()
+    )
+
+    logging.info(
+        "Sent simulation subscriptions message " +
+        f"{events_message.operation.value}, for Simulation " +
+        f"{events_message.simulation_id} to {Topics.SIMULATION.value}"
+    )
     connection.close()

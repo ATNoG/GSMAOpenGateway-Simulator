@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-21 14:23:30
+# @Last Modified time: 2023-12-22 20:47:28
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -672,3 +672,11 @@ def delete_location_subscription(
 ):
     db.delete(subscription)
     db.commit()
+
+
+def get_simulated_device_id_from_simulated_device_instance(
+    db: Session, simulated_device_instance_id: int
+):
+    return db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.id == simulated_device_instance_id,
+    ).first().simulation_ue

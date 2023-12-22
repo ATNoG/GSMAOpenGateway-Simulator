@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 16:26:57
+# @Last Modified time: 2023-12-22 21:07:28
 import config # noqa
 import logging
 from common.message_broker.schemas import (
@@ -16,6 +16,7 @@ from common.apis.device_location_schemas import (
 )
 from common.helpers import device_location as DeviceLocationHelper
 from notifications import Notifications
+from datetime import datetime
 
 
 class GeofencingSubscriptionsManager(SubscriptionsManager):
@@ -27,17 +28,27 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
 
         # Todo: Check only the valid subscritions (get its expiry time)
         simulation_instance = simulation_data.simulation_id
-        
+
         for subscription in self.get_subscriptions(simulation_instance):
+
+            # Only consider the simulations that relate with the current UE
+            # Only considered not expired subscriptions
+            if (
+                simulation_data.data["ue"] != subscription.ue
+                or
+                datetime.utcnow() > subscription.expire_time
+            ):
+                continue  # SKIP
+
             if subscription.geofencing_subscription_type == \
-                SubscriptionEventType.AREA_ENTERED:
+                    SubscriptionEventType.AREA_ENTERED:
                 self.has_ue_entered_geofence(simulation_data, subscription)
             elif subscription.geofencing_subscription_type == \
-            SubscriptionEventType.AREA_LEFT:
+                    SubscriptionEventType.AREA_LEFT:
                 self.has_ue_left_geofence(simulation_data, subscription)
             elif subscription.geofencing_subscription_type == \
-            SubscriptionEventType.SUBSCRIPTION_ENDS:
-                #TODO: Implement Later
+                    SubscriptionEventType.SUBSCRIPTION_ENDS:
+                # TODO: Implement Later
                 pass
 
     def has_ue_entered_geofence(
@@ -64,7 +75,7 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
 
         if ue_inside_geofence:
             logging.info(
-                f"UE {simulation_data.data.ue} is INside the are defined " +
+                f"UE {simulation_data.data['ue']} is INside the are defined " +
                 f"by the subscription {subscription.subscription_id}"
             )
             self.send_notification_if_needed(subscription, "IN")
@@ -95,8 +106,8 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
 
         if not ue_inside_geofence:
             logging.info(
-                f"UE {simulation_data.data.ue} is OUTside the are defined " +
-                f"by the subscription {subscription.subscription_id}"
+                f"UE {simulation_data.data['ue']} is OUTside the are " +
+                f"defined by the subscription {subscription.subscription_id}"
             )
             self.send_notification_if_needed(subscription, "OUT")
 
@@ -127,8 +138,8 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
         # Get UE Position Circle
         ue_area = DeviceLocationHelper\
             .shapely_circle_from_coordinates_circle_without_radius(
-                center_latitude=simulation_data.data.latitude,
-                center_longitude=simulation_data.data.longitude
+                center_latitude=simulation_data.data["latitude"],
+                center_longitude=simulation_data.data["longitude"]
             )
 
         # Get the subscription desirable area

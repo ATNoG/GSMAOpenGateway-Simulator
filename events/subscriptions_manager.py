@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-20 11:40:20
+# @Last Modified time: 2023-12-22 10:26:31
 from context import Context
 
 
@@ -16,5 +16,5 @@ class SubscriptionsManager:
     def get_subscriptions(self, simulation_id):
         return self.context.get_subscriptions(simulation_id)
 
-    def remove_subscriptions(self, simulation_id):
-        self.context.remove_subscriptions(simulation_id)
+    def remove_subscription(self, subscription):
+        self.context.remove_subscription(subscription)

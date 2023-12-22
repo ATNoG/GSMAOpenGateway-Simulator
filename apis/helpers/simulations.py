@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-13 10:52:05
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 21:07:03
+# @Last Modified time: 2023-12-22 11:07:38
 
 import config # noqa
 from common.message_broker import schemas as SimulationMessageSchemas
@@ -38,7 +38,8 @@ def update_simulation_payload_with_correct_device_ids(
 
 
 def compose_simulation_start_messages_for_child_simulations(
-    simulation_instance, child_simulation_instances, simulation_payload
+    simulation_id, simulation_instance, child_simulation_instances,
+    simulation_payload
 ):
     assert len(simulation_payload["child_simulations"]) == len(
         child_simulation_instances)
@@ -48,6 +49,7 @@ def compose_simulation_start_messages_for_child_simulations(
     for i in range(len(child_simulation_instances)):
         simulation_start_messages.append(
             SimulationMessageSchemas.SimulationAction(
+                simulation_id=simulation_id,
                 action=SimulationMessageSchemas.SimulationOperation.START,
                 simulation_type=child_simulation_instances[i].simulation_type,
                 simulation_instance_id=simulation_instance.id,
@@ -60,10 +62,11 @@ def compose_simulation_start_messages_for_child_simulations(
 
 
 def compose_simulation_stop_messages_for_child_simulations(
-    child_simulation_instances
+    simulation_id, child_simulation_instances
 ):
     return [
         SimulationMessageSchemas.SimulationAction(
+            simulation_id=simulation_id,
             action=SimulationMessageSchemas.SimulationOperation.STOP,
             simulation_type=child_simulation_instance.simulation_type,
             simulation_instance_id=child_simulation_instance

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-21 14:26:30
+# @Last Modified time: 2023-12-22 21:07:45
 
 import utm
 from datetime import datetime
@@ -238,11 +238,17 @@ def shapely_polygon_from_area(area):
 def parse_simulation_ue_to_pydantic_device(
     simulation_ue: models.SimulationUE
 ) -> Device:
-    ipv4_address = DeviceIpv4Addr(
-        publicAddress=simulation_ue.ipv4_address_public_address,
-        privateAddress=simulation_ue.ipv4_address_private_address,
-        publicPort=simulation_ue.ipv4_address_public_port
-    )
+    ipv4_address = DeviceIpv4Addr()
+
+    if simulation_ue.ipv4_address_public_address:
+        ipv4_address.public_address = simulation_ue\
+            .ipv4_address_public_address
+    if simulation_ue.ipv4_address_private_address:
+        ipv4_address.private_address = simulation_ue\
+            .ipv4_address_private_address
+    if simulation_ue.ipv4_address_public_port:
+        ipv4_address.public_port = simulation_ue\
+            .ipv4_address_public_port
 
     return Device(
         phone_number=simulation_ue.phone_number,

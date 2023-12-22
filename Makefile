@@ -23,9 +23,13 @@ delete_dependencies:
 run_simulations_orchestrator:
 	source venv/bin/activate && python simulations/simulations_orchestrator.py
 
-# Simulations Orchestrator
+# Simulations Handler
 run_simulations_handler:
 	source venv/bin/activate && python handlers/handlers_orchestrator.py
+
+# Simulations Events Orchestrator
+run_events_orchestrator:
+	source venv/bin/activate && python events/events_orchestrator.py
 
 # Simulations API
 run_simulations_api:
