@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:21:40
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:30:36
+# @Last Modified time: 2023-12-23 17:41:47
 
 import requests
 import requests.exceptions
@@ -42,16 +42,11 @@ class Notifications:
                 notification_from_db
             )
 
-            import json
-            print("callback_payload.model_dump()")
-            print(type(callback_payload.model_dump()))
-            print(callback_payload.model_dump())
-            
+            # Tweak the callback payload
             callback_payload = callback_payload.model_dump()
             callback_payload["type"] = callback_payload["type"].value
             callback_payload["time"] = callback_payload["time"]\
                 .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-            print(callback_payload)
 
             response = requests.post(
                 url=subscription.webhook.notification_url,

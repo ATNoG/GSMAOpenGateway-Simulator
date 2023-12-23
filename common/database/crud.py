@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:14:43
+# @Last Modified time: 2023-12-23 17:49:30
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -425,35 +425,12 @@ def create_simulation_entities_required_for_starting_simulation(
 
         # Process the Simulation Devices
         for device in simulation_payload["devices"]:
-            if not device.get("ipv4_address"):
-                ipv4_address_public_address = ipv4_address_public_port = \
-                    ipv4_address_private_address = None
-            else:
-                ipv4_address_public_address = device["ipv4_address"].get(
-                    "public_address"
-                )
-                ipv4_address_public_port = device["ipv4_address"].get(
-                    "public_port"
-                )
-                ipv4_address_private_address = device["ipv4_address"].get(
-                    "private_address"
-                )
 
-            # Get the simulation UEs
-            simulation_ue = db.query(models.SimulationUE).filter(
-                models.SimulationUE.root_simulation == simulation.id,
-                models.SimulationUE.phone_number == device.get(
-                    "phone_number"),
-                models.SimulationUE.network_access_identifier == device.get(
-                    "network_access_identifier"),
-                models.SimulationUE.ipv4_address_public_address ==
-                ipv4_address_public_address,
-                models.SimulationUE.ipv4_address_public_port ==
-                ipv4_address_public_port,
-                models.SimulationUE.ipv4_address_private_address ==
-                ipv4_address_private_address,
-                models.SimulationUE.ipv6_address == device.get("ipv6_address")
-            ).first()
+            simulation_ue = get_simulated_device_based_on_phone_number(
+                db=db,
+                root_simulation_id=simulation.id,
+                phone_number=device.get("phone_number")
+            )
 
             new_simulation_ue_instance = models.SimulationUEInstance(
                 simulation_instance=new_simulation_instance.id,
@@ -589,6 +566,15 @@ def get_simulated_device_from_root_simulation(
     return db.query(models.SimulationUE).filter(
         models.SimulationUE.root_simulation == root_simulation_id,
         models.SimulationUE.phone_number == device.phone_number
+    ).first()
+
+
+def get_simulated_device_based_on_phone_number(
+    db: Session, root_simulation_id, phone_number
+):
+    return db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        models.SimulationUE.phone_number == phone_number
     ).first()
 
 
