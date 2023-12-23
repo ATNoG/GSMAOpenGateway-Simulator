@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 12:13:53
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 22:24:52
+# @Last Modified time: 2023-12-23 20:47:58
 # coding: utf-8
 
 import config # noqa
@@ -12,23 +12,16 @@ from typing import List  # noqa: F401
 from fastapi import APIRouter, Header, Body, Path, Depends
 from common.apis.device_location_schemas import (
     CreateSubscription,
-    ErrorInfo,
     SubscriptionInfo,
 )
-import json
 from fastapi import status
 from fastapi.responses import Response
 from common.helpers import device_location as DeviceLocationHelper
-from common.message_broker import schemas as MessageBrokerSchemas
 from common.database import connections_factory as DBFactory
-from common.apis import device_location_schemas as DeviceLocationSchemas
-from common.helpers import device_location as DeviceLocationHelpers
 from helpers.responses_documentation.geofencing_api import (
     GeofencingResponses
 )
-from helpers import message_broker as PikaHelper
 from common.database import crud
-import copy
 
 router = APIRouter()
 
@@ -63,40 +56,6 @@ async def create_subscription(
         ue_id=simulated_ue.id,
         subscription=create_subscription
     )
-
-    # Send the new subscription to the events module.
-    # This behaviour is due to the fact that a client may create a new
-    # subscription when the simulation is already running
-    subscription_parse_for_broker = MessageBrokerSchemas\
-        .GeofencingSubscription(
-            simulation_id=simulation_id,
-            subscription_id=created_subscription.id,
-            subscription_type=MessageBrokerSchemas
-            .SubscriptionType.DEVICE_LOCATION_GEOFENCING,
-            area=DeviceLocationHelpers.parse_area_dict_to_pydantic_area(
-                json.loads(json.loads(created_subscription.area))
-            ),
-            geofencing_subscription_type=created_subscription
-            .subscription_type,
-            ue=created_subscription.ue,
-            webhook=DeviceLocationSchemas.Webhook(
-                notificationUrl=created_subscription.webhook_url,
-                notificationAuthToken=created_subscription
-                .webhook_auth_token
-            ),
-            expire_time=created_subscription.expire_time,
-        )
-
-    message_to_send_to_events_module = MessageBrokerSchemas.\
-        GeofencingSubscriptionEvent(
-            simulation_id=simulation_id,
-            operation=MessageBrokerSchemas
-            .GeofencingSubscriptionEventOperation.add,
-            subscriptions=[subscription_parse_for_broker]
-        )
-
-    # Send message to the events module
-    PikaHelper.send_events_messages(message_to_send_to_events_module)
 
     # Return
     subscription_info = SubscriptionInfo(
@@ -144,46 +103,12 @@ async def delete_subscription(
         )
         return DeviceLocationHelper.subscription_not_found()
 
-    subscription_from_db_snapshot = copy.deepcopy(subscription_from_db)
     # Delete subscription
     crud.delete_location_subscription(
         db=db,
         subscription=subscription_from_db
     )
 
-    # Send the new subscription to the events module.
-    # This behaviour is due to the fact that a client may create a new
-    # subscription when the simulation is already running
-    subscription_parse_for_broker = MessageBrokerSchemas\
-        .GeofencingSubscription(
-            simulation_id=simulation_id,
-            subscription_id=subscription_from_db_snapshot.id,
-            subscription_type=MessageBrokerSchemas
-            .SubscriptionType.DEVICE_LOCATION_GEOFENCING,
-            area=DeviceLocationHelpers.parse_area_dict_to_pydantic_area(
-                json.loads(json.loads(subscription_from_db_snapshot.area))
-            ),
-            geofencing_subscription_type=subscription_from_db_snapshot
-            .subscription_type,
-            ue=subscription_from_db_snapshot.ue,
-            webhook=DeviceLocationSchemas.Webhook(
-                notificationUrl=subscription_from_db_snapshot.webhook_url,
-                notificationAuthToken=subscription_from_db_snapshot
-                .webhook_auth_token
-            ),
-            expire_time=subscription_from_db_snapshot.expire_time,
-        )
-
-    message_to_send_to_events_module = MessageBrokerSchemas.\
-        GeofencingSubscriptionEvent(
-            simulation_id=simulation_id,
-            operation=MessageBrokerSchemas
-            .GeofencingSubscriptionEventOperation.delete,
-            subscriptions=[subscription_parse_for_broker]
-        )
-
-    # Send message to the events module
-    PikaHelper.send_events_messages(message_to_send_to_events_module)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

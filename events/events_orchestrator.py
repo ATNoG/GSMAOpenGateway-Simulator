@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 10:57:46
+# @Last Modified time: 2023-12-23 20:45:44
 import sys
 import json
 import logging
@@ -26,35 +26,8 @@ def main():
         message = json.loads(body)
         logging.debug(f"[x] Received {message}")
 
-        # If the received message relates with geofencing subscriptions
-        if message.get('scope') == "GEOFENCING_SUBSCRIPTIONS":
-
-            # Load message to pydantic model
-            geofencing_subscription_event = MessageBrokerSchemas\
-                .GeofencingSubscriptionEvent(
-                    **message
-                )
-
-            # Process the addition of new subscriptions
-            if geofencing_subscription_event.operation == \
-                    MessageBrokerSchemas.GeofencingSubscriptionEventOperation\
-                    .add:
-                for sub in geofencing_subscription_event.subscriptions:
-                    geofencing_subscriptions_manager.add_subscription(
-                        sub
-                    )
-
-            # Process the deletion of subscriptions
-            elif geofencing_subscription_event.operation == \
-                    MessageBrokerSchemas.GeofencingSubscriptionEventOperation\
-                    .delete:
-                for sub in geofencing_subscription_event.subscriptions:
-                    geofencing_subscriptions_manager.remove_subscription(
-                        sub
-                    )
-
         # If the received payload relates with simulation data
-        elif "scope" in message and message['scope'] == "SIMULATION_DATA":
+        if "scope" in message and message['scope'] == "SIMULATION_DATA":
             simulation_data = MessageBrokerSchemas\
                 .SimulationData(**message)
             if simulation_data.simulation_type == SimulationType\

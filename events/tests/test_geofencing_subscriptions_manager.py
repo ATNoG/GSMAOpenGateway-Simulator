@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:38:24
+# @Last Modified time: 2023-12-23 21:30:34
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -13,9 +13,9 @@ from common.simulation.simulation_types import SimulationType
 from notifications import Notifications
 from common.message_broker.schemas import (
     SimulationData,
-    GeofencingSubscription,
     DeviceLocationSimulationData
 )
+from common.subscriptions.schemas import GeofencingSubscription
 import constants as Constants
 from common.apis.device_location_schemas import (
     SubscriptionEventType,
@@ -180,9 +180,14 @@ def test_if_area_related_events_are_being_triggered(mocker):
     # Create Geofencing Subscriptions Manager
     geo_subs_manager = GeofencingSubscriptionsManager()
 
-    # Add two test subscriptions
-    geo_subs_manager.add_subscription(area_entered_geofencing_subscription)
-    geo_subs_manager.add_subscription(area_left_geofencing_subscription)
+    get_subscriptions_mock = mocker.patch(
+        target="geofencing_subscriptions_manager." +
+        "GeofencingSubscriptionsManager.get_subscriptions",
+        return_value=[
+            area_entered_geofencing_subscription,
+            area_left_geofencing_subscription
+        ]
+    )
 
     # Simualte that UE device location simulation data is arriving
     for simulation_data in simulated_data:
@@ -192,6 +197,9 @@ def test_if_area_related_events_are_being_triggered(mocker):
 
     # Assert that the noficiation method was called 5 times
     assert notifications_mock.call_count == 5
+    # Assert that the get subscriptions method was called once per simulation
+    # data
+    assert get_subscriptions_mock.call_count == len(simulated_data)
 
     # Assert the order of the different calls to that method
     expected_calls = [

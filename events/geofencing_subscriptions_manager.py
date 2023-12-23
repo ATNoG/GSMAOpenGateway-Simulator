@@ -2,20 +2,21 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 11:09:09
+# @Last Modified time: 2023-12-23 21:42:54
 import config # noqa
 import logging
-from common.message_broker.schemas import (
-    SimulationData,
-    GeofencingSubscription
-)
+from common.message_broker.schemas import SimulationData, SubscriptionType
+from common.subscriptions.schemas import GeofencingSubscription
 from subscriptions_manager import SubscriptionsManager
 from common.apis.device_location_schemas import (
     SubscriptionEventType,
-    VerificationResult
+    VerificationResult,
+    Webhook
 )
 from common.helpers import device_location as DeviceLocationHelper
-from datetime import datetime
+from datetime import datetime, timedelta
+import json
+from common.database import crud
 
 
 class GeofencingSubscriptionsManager(SubscriptionsManager):
@@ -25,10 +26,9 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
 
     def handle_ue_location_message(self, simulation_data: SimulationData):
 
-        # Todo: Check only the valid subscritions (get its expiry time)
-        simulation_instance = simulation_data.simulation_id
-
-        for subscription in self.get_subscriptions(simulation_instance):
+        for subscription in self.get_subscriptions(
+            simulation_data.simulation_id
+        ):
 
             # Only consider the simulations that relate with the current UE
             # Only considered not expired subscriptions
@@ -148,3 +148,63 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
             )
 
         return ue_area, subscription_desired_area
+
+    def get_subscriptions(self, root_simulation_id):
+
+        if (
+            not self.has_looked_for_subscriptions
+            or
+            self.last_subscriptions_update_timestamp + timedelta(seconds=5) <
+                datetime.utcnow()
+        ):
+            self.has_looked_for_subscriptions = True
+
+            logging.info(
+                "Will collect the most recent subscriptions for Root " +
+                f"Simulation {root_simulation_id}..."
+            )
+
+            # Update the last subscriptions update timestamp
+            self.last_subscriptions_update_timestamp = datetime.utcnow()
+
+            current_active_subscriptions = [
+                GeofencingSubscription(
+                    simulation_id=root_simulation_id,
+                    subscription_id=subs.id,
+                    subscription_type=SubscriptionType
+                    .DEVICE_LOCATION_GEOFENCING,
+                    area=DeviceLocationHelper.parse_area_dict_to_pydantic_area(
+                        json.loads(json.loads(subs.area))
+                    ),
+                    geofencing_subscription_type=subs.subscription_type,
+                    ue=subs.ue,
+                    webhook=Webhook(
+                        notificationUrl=subs.webhook_url,
+                        notificationAuthToken=subs.webhook_auth_token
+                    ),
+                    expire_time=subs.expire_time,
+                )
+                for subs
+                in crud
+                .get_active_device_location_subscriptions_for_root_simulation(
+                    db=self.db,
+                    root_simulation_id=root_simulation_id
+                )
+            ]
+
+            # Check if the simulation is already loaded or not
+            loaded_subscriptions_ids = [
+                sub.subscription_id
+                for sub
+                in self.active_subscriptions
+            ]
+
+            for current_active_subscription in current_active_subscriptions:
+                # Add a new subscription
+                if current_active_subscription.subscription_id not in \
+                        loaded_subscriptions_ids:
+                    self.active_subscriptions.append(
+                        current_active_subscription
+                    )
+
+        return self.active_subscriptions

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:08:51
+# @Last Modified time: 2023-12-23 20:49:02
 # coding: utf-8
 from fastapi import APIRouter, Depends
 import json
@@ -10,13 +10,11 @@ from sqlalchemy.orm import Session
 import logging
 import config # noqa
 from common.apis import simulation_schemas as SimulationSchemas
-from common.apis import device_location_schemas as DeviceLocationSchemas
 from common.database import connections_factory as DBFactory
 from common.database import crud
 from helpers import simulations as SimulationHelpers
 from helpers import message_broker as PikaHelper
 from common.helpers import device_location as DeviceLocationHelpers
-from common.message_broker import schemas as MessageBrokerSchemas
 router = APIRouter()
 
 
@@ -256,44 +254,6 @@ async def start_simulation(
                 created_entities["child_simulations"],
                 simulation_payload
             )
-
-        # Deal with eventual subscription events for this simulation
-        device_location_subscriptions = crud\
-            .get_device_location_subscriptions_for_root_simulation(
-                db=db,
-                root_simulation_id=simulation_id
-            )
-
-        subscriptions_parsed = [
-            MessageBrokerSchemas.GeofencingSubscription(
-                simulation_id=simulation_id,
-                subscription_id=subs.id,
-                subscription_type=MessageBrokerSchemas
-                .SubscriptionType.DEVICE_LOCATION_GEOFENCING,
-                area=DeviceLocationHelpers.parse_area_dict_to_pydantic_area(
-                    json.loads(json.loads(subs.area))
-                ),
-                geofencing_subscription_type=subs.subscription_type,
-                ue=subs.ue,
-                webhook=DeviceLocationSchemas.Webhook(
-                    notificationUrl=subs.webhook_url,
-                    notificationAuthToken=subs.webhook_auth_token
-                ),
-                expire_time=subs.expire_time,
-            )
-            for subs
-            in device_location_subscriptions
-        ]
-
-        message_to_send_to_events_module = MessageBrokerSchemas.\
-            GeofencingSubscriptionEvent(
-                simulation_id=simulation_id,
-                operation=MessageBrokerSchemas
-                .GeofencingSubscriptionEventOperation.add,
-                subscriptions=subscriptions_parsed
-            )
-
-        PikaHelper.send_events_messages(message_to_send_to_events_module)
         PikaHelper.send_simulation_messages(simulation_start_messages)
     else:
         # Todo: Inform the client that the simulation cannot be started
@@ -344,43 +304,6 @@ async def stop_simulation(
                 child_simulation_instances
             )
 
-        # Deal with eventual subscription events for this simulation
-        device_location_subscriptions = crud\
-            .get_device_location_subscriptions_for_root_simulation(
-                db=db,
-                root_simulation_id=simulation_id
-            )
-
-        subscriptions_parsed = [
-            MessageBrokerSchemas.GeofencingSubscription(
-                simulation_id=simulation_id,
-                subscription_id=subs.id,
-                subscription_type=MessageBrokerSchemas
-                .SubscriptionType.DEVICE_LOCATION_GEOFENCING,
-                area=DeviceLocationHelpers.parse_area_dict_to_pydantic_area(
-                    json.loads(json.loads(subs.area))
-                ),
-                geofencing_subscription_type=subs.subscription_type,
-                ue=subs.ue,
-                webhook=DeviceLocationSchemas.Webhook(
-                    notificationUrl=subs.webhook_url,
-                    notificationAuthToken=subs.webhook_auth_token
-                ),
-                expire_time=subs.expire_time,
-            )
-            for subs
-            in device_location_subscriptions
-        ]
-
-        message_to_send_to_events_module = MessageBrokerSchemas.\
-            GeofencingSubscriptionEvent(
-                simulation_id=simulation_id,
-                operation=MessageBrokerSchemas
-                .GeofencingSubscriptionEventOperation.delete,
-                subscriptions=subscriptions_parsed
-            )
-
-        PikaHelper.send_events_messages(message_to_send_to_events_module)
         PikaHelper.send_simulation_messages(simulation_stop_messages)
     else:
         # Todo: Inform the client that the simulation cannot be stopped

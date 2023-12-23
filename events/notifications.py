@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:21:40
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:41:47
+# @Last Modified time: 2023-12-23 20:46:44
 
 import requests
 import requests.exceptions
@@ -27,8 +27,7 @@ class Notifications:
             "is realated with a " +
             f"{subscription.geofencing_subscription_type.value} event."
         )
-        
-        print(subscription)
+
         # First, we have to register this new notification
         notification_from_db = crud\
             .create_device_location_subscription_notification(

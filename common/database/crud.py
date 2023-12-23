@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:49:30
+# @Last Modified time: 2023-12-23 20:20:59
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -641,6 +641,15 @@ def get_device_location_subscriptions_for_root_simulation(
     db: Session, root_simulation_id: int
 ):
     return db.query(models.DeviceLocationSubscription).filter(
+        models.DeviceLocationSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_active_device_location_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceLocationSubscription).filter(
+        models.DeviceLocationSubscription.expire_time > datetime.utcnow(),
         models.DeviceLocationSubscription.root_simulation == root_simulation_id
     ).all()
 
