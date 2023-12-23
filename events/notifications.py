@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:21:40
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 16:36:52
+# @Last Modified time: 2023-12-23 17:30:36
 
 import requests
 import requests.exceptions
@@ -27,6 +27,8 @@ class Notifications:
             "is realated with a " +
             f"{subscription.geofencing_subscription_type.value} event."
         )
+        
+        print(subscription)
         # First, we have to register this new notification
         notification_from_db = crud\
             .create_device_location_subscription_notification(
@@ -40,6 +42,17 @@ class Notifications:
                 notification_from_db
             )
 
+            import json
+            print("callback_payload.model_dump()")
+            print(type(callback_payload.model_dump()))
+            print(callback_payload.model_dump())
+            
+            callback_payload = callback_payload.model_dump()
+            callback_payload["type"] = callback_payload["type"].value
+            callback_payload["time"] = callback_payload["time"]\
+                .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            print(callback_payload)
+
             response = requests.post(
                 url=subscription.webhook.notification_url,
                 headers={
@@ -47,7 +60,7 @@ class Notifications:
                     "Authorization": "Bearer " +
                     subscription.webhook.notification_auth_token
                 },
-                data=callback_payload.model_dump(),
+                json=callback_payload,
                 timeout=15
             )
             # Raises an HTTPError for bad responses (4xx and 5xx)
@@ -92,7 +105,7 @@ class Notifications:
             )
 
         return DeviceLocationSchemas.CloudEvent(
-            id=notification_from_db.id,
+            id=str(notification_from_db.id),
             source=Constants.NOTIFICATION_SOURCE,
             type=subscription.geofencing_subscription_type,
             specversion="1.0",

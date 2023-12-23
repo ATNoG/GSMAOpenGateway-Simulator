@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 11:11:02
+# @Last Modified time: 2023-12-23 17:09:46
 import uuid
 from sqlalchemy import (
     Column,
@@ -125,14 +125,12 @@ class DeviceLocationSubscription(Base):
 class DeviceLocationSubscriptionNotification(Base):
     __tablename__ = "device_location_subscription_notification"
 
-    id = Column(
-        String, primary_key=True, index=True, unique=True, nullable=False
-    )
+    id = Column(Integer, primary_key=True, index=True)
     subscription_id = Column(
-        Integer, ForeignKey("device_location_subscription.id"), nullable=False
+        String, ForeignKey("device_location_subscription.id"), nullable=False
     )
-    sucess = Column(Boolean)
-    error = Column(String)
+    sucess = Column(Boolean, nullable=True, default=None)
+    error = Column(String, nullable=True, default=None)
 
 
 @event.listens_for(DeviceLocationSubscription, 'before_insert')

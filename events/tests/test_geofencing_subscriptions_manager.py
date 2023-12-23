@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 16:43:52
+# @Last Modified time: 2023-12-23 17:38:24
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -25,6 +25,7 @@ from common.apis.device_location_schemas import (
     CloudEvent
 )
 from common.database import models
+import json
 
 
 def get_simulated_data():
@@ -332,10 +333,18 @@ def test_if_area_related_events_notifications(
     # before comparing the expected response and the actual one, we set the
     # 'time' argument to None, on both.
     if expected_return:
-        ret.time = None
+        ret["time"] = None
         expected_return.time = None
+        # Expected Return to json
+        expected_return_json = expected_return.model_dump()
+        expected_return_json["type"] = expected_return_json["type"].value
+        expected_return_json = json.dumps(expected_return_json)
+        # Actual Return to json
+        ret_json = json.dumps(ret)
+        assert ret_json == expected_return_json
+    else:
+        assert ret == expected_return
 
     assert create_db_notification_mock.call_count == 1
     assert get_ue_from_db_mock.call_count == 1
     assert update_subscription_notification_mock.call_count == 1
-    assert ret == expected_return

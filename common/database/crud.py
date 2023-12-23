@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 11:03:38
+# @Last Modified time: 2023-12-23 17:14:43
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -684,7 +684,7 @@ def get_simulated_device_id_from_simulated_device_instance(
 
 
 def create_device_location_subscription_notification(
-    db: Session, subscription_id: int, sucess: bool = None,
+    db: Session, subscription_id: str, sucess: bool = None,
     error: str = None
 ):
     new_notification = models.DeviceLocationSubscriptionNotification(
