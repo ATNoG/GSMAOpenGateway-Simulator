@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-21 11:36:42
+# @Last Modified time: 2023-12-23 10:39:09
 # coding: utf-8
 
 import config # noqa
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import logging
 from common.apis.device_location_schemas import RetrievalLocationRequest
 from common.helpers import device_location as DeviceLocationHelper
-from helpers.responses_documentation.location_retrieval_api import (
+from apis.helpers.responses_documentation.location_retrieval_api import (
     LocationRetrievalResponses
 )
 from common.database import connections_factory as DBFactory

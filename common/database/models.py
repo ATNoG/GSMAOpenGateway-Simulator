@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:08:31
+# @Last Modified time: 2023-12-23 11:11:02
 import uuid
 from sqlalchemy import (
     Column,
@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     DateTime,
     Float,
+    Boolean,
     event
 )
 from common.database.database import Base
@@ -119,6 +120,19 @@ class DeviceLocationSubscription(Base):
     webhook_auth_token = Column(String)
     start_time = Column(DateTime(timezone=True))
     expire_time = Column(DateTime(timezone=True))
+
+
+class DeviceLocationSubscriptionNotification(Base):
+    __tablename__ = "device_location_subscription_notification"
+
+    id = Column(
+        String, primary_key=True, index=True, unique=True, nullable=False
+    )
+    subscription_id = Column(
+        Integer, ForeignKey("device_location_subscription.id"), nullable=False
+    )
+    sucess = Column(Boolean)
+    error = Column(String)
 
 
 @event.listens_for(DeviceLocationSubscription, 'before_insert')

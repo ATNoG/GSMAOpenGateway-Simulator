@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 20:47:28
+# @Last Modified time: 2023-12-23 11:03:38
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -13,6 +13,7 @@ from common.apis.device_location_schemas import (
     CreateSubscription
 )
 from datetime import datetime
+
 
 def create_simulation(
     db: Session, name, description, duration_seconds, devices, payload
@@ -680,3 +681,44 @@ def get_simulated_device_id_from_simulated_device_instance(
     return db.query(models.SimulationUEInstance).filter(
         models.SimulationUEInstance.id == simulated_device_instance_id,
     ).first().simulation_ue
+
+
+def create_device_location_subscription_notification(
+    db: Session, subscription_id: int, sucess: bool = None,
+    error: str = None
+):
+    new_notification = models.DeviceLocationSubscriptionNotification(
+        subscription_id=subscription_id,
+    )
+
+    if sucess:
+        new_notification.sucess = sucess
+    if error:
+        new_notification.error = error
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification
+
+
+def update_device_location_subscription_notification(
+    db: Session, notification_id: int, sucess: bool = None,
+    error: str = None
+):
+    notification = db.query(
+        models.DeviceLocationSubscriptionNotification
+    ).filter(
+        models.DeviceLocationSubscriptionNotification.id == notification_id,
+    ).first()
+
+    if sucess:
+        notification.sucess = sucess
+    if error:
+        notification.error = error
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification

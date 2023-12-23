@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 22:29:57
+# @Last Modified time: 2023-12-23 16:43:52
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -16,12 +16,15 @@ from common.message_broker.schemas import (
     GeofencingSubscription,
     DeviceLocationSimulationData
 )
+import constants as Constants
 from common.apis.device_location_schemas import (
     SubscriptionEventType,
     Circle,
     Webhook,
-    Point
+    Point,
+    CloudEvent
 )
+from common.database import models
 
 
 def get_simulated_data():
@@ -227,7 +230,35 @@ def test_if_area_related_events_are_being_triggered(mocker):
                 ),
                 expire_time=datetime.utcnow(),
             ),
-            True
+            CloudEvent(
+                id="10",
+                source=Constants.NOTIFICATION_SOURCE,
+                type=SubscriptionEventType.AREA_ENTERED,
+                specversion="1.0",
+                datacontenttype="application/json",
+                time=datetime.utcnow(),
+                data={
+                    "subscriptionId": "1",
+                    "device": {
+                        'phone_number': '987654321',
+                        'network_access_identifier': '987654321@domain.com',
+                        'ipv4_address': {
+                            'public_address': '10.93.125.84',
+                            'private_address': '10.10.10.84',
+                            'public_port': 56795
+                        },
+                        'ipv6_address': '2001:db6:85a3:8d3:1319:8a2e:111:7344'
+                    },
+                    "area": {
+                        'area_type': 'circle',
+                        'center': {
+                            'latitude': 32.74513588903821,
+                            'longitude': -17.0078912128889
+                        },
+                        'radius': 22840.0
+                    }
+                }
+            )
         ),
         (
             GeofencingSubscription(
@@ -251,10 +282,60 @@ def test_if_area_related_events_are_being_triggered(mocker):
                 ),
                 expire_time=datetime.utcnow(),
             ),
-            False
+            None
         )
     ]
 )
-def test_if_area_related_events_notifications(subscription, expected_return):
-    ret = Notifications.send_and_record_notification(subscription)
+def test_if_area_related_events_notifications(
+    subscription, expected_return, mocker
+):
+    # Prepare Mocks
+    create_db_notification_mock = mocker.patch(
+        target="common.database.crud." +
+        "create_device_location_subscription_notification",
+        return_value=models.DeviceLocationSubscriptionNotification(
+            id="10",
+            subscription_id=int(subscription.subscription_id)
+        )
+    )
+
+    get_ue_from_db_mock = mocker.patch(
+        target="common.database.crud." +
+        "get_simulated_device_from_id",
+        return_value=models.SimulationUE(
+            id=subscription.ue,
+            root_simulation=subscription.simulation_id,
+            phone_number="987654321",
+            network_access_identifier="987654321@domain.com",
+            ipv4_address_public_address="10.93.125.84",
+            ipv4_address_private_address="10.10.10.84",
+            ipv4_address_public_port=56795,
+            ipv6_address="2001:db6:85a3:8d3:1319:8a2e:111:7344"
+        )
+    )
+
+    update_subscription_notification_mock = mocker.patch(
+        target="common.database.crud." +
+        "update_device_location_subscription_notification",
+        return_value=models.DeviceLocationSubscriptionNotification(
+            id="10",
+            subscription_id=int(subscription.subscription_id),
+            sucess=expected_return
+        )
+    )
+
+    notifications = Notifications(None)
+    ret = notifications.send_and_record_notification(subscription)
+
+    # The times will be defined according to the object's time of creation
+    # As such, one should avoid to compare these times on this test. Thus,
+    # before comparing the expected response and the actual one, we set the
+    # 'time' argument to None, on both.
+    if expected_return:
+        ret.time = None
+        expected_return.time = None
+
+    assert create_db_notification_mock.call_count == 1
+    assert get_ue_from_db_mock.call_count == 1
+    assert update_subscription_notification_mock.call_count == 1
     assert ret == expected_return

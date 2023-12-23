@@ -2,13 +2,13 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 22:01:32
+# @Last Modified time: 2023-12-23 10:55:02
 
 # flake8: noqa
 from __future__ import annotations
 from datetime import datetime
 import re
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from pydantic import BaseModel, Field, validator, ConfigDict
 from enum import Enum
 
@@ -270,6 +270,7 @@ class CloudEvent(BaseModel):
     specversion: str = Field(alias="specversion")
     datacontenttype: Optional[str] = Field(alias="datacontenttype", default=None)
     time: datetime = Field(alias="time")
+    data: Optional[Any]
 
     @validator("source")
     def source_min_length(cls, value):

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:07:28
+# @Last Modified time: 2023-12-23 11:09:09
 import config # noqa
 import logging
 from common.message_broker.schemas import (
@@ -15,7 +15,6 @@ from common.apis.device_location_schemas import (
     VerificationResult
 )
 from common.helpers import device_location as DeviceLocationHelper
-from notifications import Notifications
 from datetime import datetime
 
 
@@ -120,7 +119,7 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
         # Here we assume that the UE last position was uknown
         if subscription.ue_inside_geofence is None:
             subscription.ue_inside_geofence = ue_location == "IN"
-            Notifications.send_and_record_notification(subscription)
+            self.notifications.send_and_record_notification(subscription)
 
         # subscription.ue_inside_geofence points to the last relative position
         # of the UE in regard to the geofence
@@ -129,7 +128,7 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
             or
             (ue_location == "OUT" and subscription.ue_inside_geofence)
         ):
-            Notifications.send_and_record_notification(subscription)
+            self.notifications.send_and_record_notification(subscription)
 
     def parse_ue_and_subscription_area_to_shapely_polygons(
         self, simulation_data: SimulationData,
