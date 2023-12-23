@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-13 15:20:33
+# @Last Modified time: 2023-12-22 11:47:23
 import json
 import sys
 import logging
@@ -34,26 +34,30 @@ def main():
             )
 
             simulation_dispatcher.create_simulation(
-                simulation_id=simulation.simulation_instance_id,
-                child_simulation_id=simulation.child_simulation_instance_id,
+                simulation_id=simulation.simulation_id,
+                simulation_instance_id=simulation.simulation_instance_id,
+                child_simulation_instance_id=simulation
+                .child_simulation_instance_id,
                 simulation_type=simulation.simulation_type,
                 simulation_payload=simulation.simulation_config,
             )
 
             simulation_dispatcher.start_simulation(
-                simulation_id=simulation.simulation_instance_id,
-                child_simulation_id=simulation.child_simulation_instance_id,
+                simulation_instance_id=simulation.simulation_instance_id,
+                child_simulation_instance_id=simulation
+                .child_simulation_instance_id,
             )
 
         elif simulation.action == SimulationOperation.STOP:
             logging.info(
-                f"Simulation {simulation.child_simulation_instance_id} " +
+                f"Simulation Instance {simulation.simulation_instance_id} " +
                 "will stop."
             )
 
             simulation_dispatcher.stop_simulation(
-                simulation_id=simulation.simulation_instance_id,
-                child_simulation_id=simulation.child_simulation_instance_id,
+                simulation_instance_id=simulation.simulation_instance_id,
+                child_simulation_instance_id=simulation
+                .child_simulation_instance_id,
             )
 
     # Start consuming

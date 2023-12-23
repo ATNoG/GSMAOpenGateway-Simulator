@@ -2,17 +2,18 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 14:49:56
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 17:41:03
+# @Last Modified time: 2023-12-20 09:44:59
 
 
 from common.database import models
 from common.database import database
 import time
 import logging
-import os
+import sys
 
+# Todo: Deal with this later
 # If under test, do not execute
-if "PYTEST_CURRENT_TEST" not in os.environ:
+if "pytest" not in sys.modules:
     # Initialize the database tables
     MODELS_INITIALIZED = False
 

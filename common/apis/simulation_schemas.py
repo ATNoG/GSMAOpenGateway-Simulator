@@ -2,13 +2,13 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 19:02:09
+# @Last Modified time: 2023-12-19 11:55:05
 
 from __future__ import annotations
 from typing import List, Union
 from pydantic import BaseModel, Field, ConfigDict
 import config # noqa
-from schemas.device_location_schemas import Device, Point
+from common.apis.device_location_schemas import Device, Point
 from common.simulation.simulation_types import SimulationType
 
 

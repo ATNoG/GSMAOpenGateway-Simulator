@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:11:26
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-15 21:06:41
+# @Last Modified time: 2023-12-22 20:50:13
 import networkx
 import osmnx as ox
 import threading
@@ -11,6 +11,7 @@ from aux.ue_movement import UEMovement
 from base_simulation import Simulation
 from common.simulation.simulation_types import SimulationType
 from common.message_broker import connections_factory as PikaFactory
+from common.database import crud
 ox.config(use_cache=True, log_console=True)
 
 
@@ -22,13 +23,15 @@ class DeviceLocationSimulation(Simulation):
     simulation_type = SimulationType.DEVICE_LOCATION
 
     def __init__(
-        self, db, simulation_id, child_simulation_id, simulation_payload
+        self, db, simulation_id, simulation_instance_id, child_simulation_id,
+        simulation_payload
     ):
         # Load location graph
         self.graph = ox.io.load_graphml('aveiro.graphml')
         # Initialize super
         super().__init__(
-            db, simulation_id, child_simulation_id, simulation_payload
+            db, simulation_id, simulation_instance_id, child_simulation_id,
+            simulation_payload
         )
 
     def create_itinerary(self, stops, graph):
@@ -57,16 +60,23 @@ class DeviceLocationSimulation(Simulation):
 
     def compute_itineraries(self):
 
-        for ue in self.simulation_payload["devices"]:
-            itinerary = self.create_itinerary(
-                stops=self.simulation_payload["itinerary"],
-                graph=self.graph
+        for ue_instance in self.simulation_payload["devices"]:
+
+            # Get Root UE
+            ue = crud.get_simulated_device_id_from_simulated_device_instance(
+                db=self.db,
+                simulated_device_instance_id=ue_instance
             )
+
             self.itineraries.append(
                 (
                     ue,
+                    ue_instance,
                     self.simulation_payload["duration"],
-                    itinerary,
+                    self.create_itinerary(
+                        stops=self.simulation_payload["itinerary"],
+                        graph=self.graph
+                    )
                 )
             )
 
@@ -88,13 +98,14 @@ class DeviceLocationSimulation(Simulation):
         # start_timestamp
         super().start_simulation()
 
-        for ue, duration, itinerary in self.itineraries:
+        for ue, ue_instance, duration, itinerary in self.itineraries:
             connection, channel = PikaFactory\
                 .get_new_pika_connection_and_channel()
             self.moving_ues.append(
                 UEMovement(
                     simulation=self,
                     ue=ue,
+                    ue_instance=ue_instance,
                     itinerary=itinerary,
                     simulation_duration=duration,
                     message_queue_channel=channel,

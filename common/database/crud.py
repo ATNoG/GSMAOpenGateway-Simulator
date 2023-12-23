@@ -2,34 +2,83 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 16:38:36
+# @Last Modified time: 2023-12-23 17:49:30
 
 from sqlalchemy.orm import Session
 from common.database import models
 from common.simulation.simulation_types import SimulationType
 import logging
 import json
+from common.apis.device_location_schemas import (
+    CreateSubscription
+)
+from datetime import datetime
 
 
 def create_simulation(
-    db: Session, name, description, duration_seconds, payload
+    db: Session, name, description, duration_seconds, devices, payload
 ):
-    # Create a new Simulation instance
-    new_simulation = models.Simulation(
-        name=name,
-        description=description,
-        duration_seconds=duration_seconds,
-        payload=payload
-    )
+    db.begin_nested()
 
-    db.add(new_simulation)
-    db.commit()
-    db.refresh(new_simulation)
+    try:
+        # Create a new Simulation instance
+        new_simulation = models.Simulation(
+            name=name,
+            description=description,
+            duration_seconds=duration_seconds,
+            payload=payload
+        )
 
-    logging.info(
-        f"Created simulation with id {new_simulation.id}."
-    )
-    return new_simulation
+        db.add(new_simulation)
+        db.flush()
+        db.refresh(new_simulation)
+
+        logging.info(
+            f"Created simulation with id {new_simulation.id}."
+        )
+
+        # Process the Simulation Devices
+        for device in devices:
+            if not device.ipv4_address:
+                ipv4_address_public_address = ipv4_address_public_port = \
+                    ipv4_address_private_address = None
+            else:
+                ipv4_address_public_address = device.ipv4_address\
+                    .public_address
+                ipv4_address_public_port = device.ipv4_address\
+                    .public_port
+                ipv4_address_private_address = device.ipv4_address\
+                    .private_address
+
+            new_simulation_ue = models.SimulationUE(
+                root_simulation=new_simulation.id,
+                phone_number=device.phone_number,
+                network_access_identifier=device.network_access_identifier,
+                ipv4_address_public_address=ipv4_address_public_address,
+                ipv4_address_public_port=ipv4_address_public_port,
+                ipv4_address_private_address=ipv4_address_private_address,
+                ipv6_address=device.ipv6_address
+            )
+
+            db.add(new_simulation_ue)
+            db.flush()
+
+            logging.info(
+                "Created Simulated UE with id " +
+                f"{new_simulation_ue.id}."
+            )
+        # Commit the transaction
+        db.commit()
+        return new_simulation
+
+    except Exception as e:
+        logging.error(
+            "Failed to create simulation entities for " +
+            f"simulation {new_simulation.id}. Reason: {e}.\n Rolling back..."
+        )
+        db.rollback()
+        logging.error("Rollback completed.")
+        return None
 
 
 def get_simulation(
@@ -376,33 +425,35 @@ def create_simulation_entities_required_for_starting_simulation(
 
         # Process the Simulation Devices
         for device in simulation_payload["devices"]:
-            if not device.get("ipv4_address"):
-                ipv4_address_public_address = ipv4_address_public_port = \
-                    ipv4_address_private_address = None
-            else:
-                ipv4_address_public_address = device["ipv4_address"].get(
-                    "public_address"
-                )
-                ipv4_address_public_port = device["ipv4_address"].get(
-                    "public_port"
-                )
-                ipv4_address_private_address = device["ipv4_address"].get(
-                    "private_address"
-                )
 
-            new_simulation_ue_instance = models.SimulationUE(
+            simulation_ue = get_simulated_device_based_on_phone_number(
+                db=db,
+                root_simulation_id=simulation.id,
+                phone_number=device.get("phone_number")
+            )
+
+            new_simulation_ue_instance = models.SimulationUEInstance(
                 simulation_instance=new_simulation_instance.id,
-                phone_number=device.get("phone_number"),
-                network_access_identifier=device.get(
-                    "network_access_identifier"),
-                ipv4_address_public_address=ipv4_address_public_address,
-                ipv4_address_public_port=ipv4_address_public_port,
-                ipv4_address_private_address=ipv4_address_private_address,
-                ipv6_address=device.get("ipv6_address")
+                simulation_ue=simulation_ue.id
             )
 
             db.add(new_simulation_ue_instance)
             db.flush()
+
+            # Update some fields in the simulated ue instances (but only
+            # on the local object)
+            new_simulation_ue_instance.phone_number = simulation_ue\
+                .phone_number
+            new_simulation_ue_instance.network_access_identifier = \
+                simulation_ue.network_access_identifier
+            new_simulation_ue_instance.ipv4_address_public_address = \
+                simulation_ue.ipv4_address_public_address
+            new_simulation_ue_instance.ipv4_address_private_address = \
+                simulation_ue.ipv4_address_private_address
+            new_simulation_ue_instance.ipv4_address_public_port = \
+                simulation_ue.ipv4_address_public_port
+            new_simulation_ue_instance.ipv6_address = \
+                simulation_ue.ipv6_address
 
             logging.info(
                 "Created Simulated UE with id " +
@@ -478,16 +529,60 @@ def get_last_child_simulation_instance_from_root_simulation(
     ).all()
 
 
-def get_simulated_device_from_root_simulation(
+def get_simulated_device_instance_from_root_simulation(
     db: Session, root_simulation_id, device
 ):
     simulation_instance = get_last_simulation_instance_from_root_simulation(
         db=db,
         root_simulation_id=root_simulation_id
     )
+
+    simulation_ue = get_simulated_device_from_root_simulation(
+        db=db,
+        root_simulation_id=root_simulation_id,
+        device=device
+    )
+
+    ue = db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.simulation_instance ==
+        simulation_instance.id,
+        models.SimulationUEInstance.simulation_ue == simulation_ue.id
+    ).first()
+
+    ue.phone_number = simulation_ue.phone_number
+    ue.network_access_identifier = simulation_ue.network_access_identifier
+    ue.ipv4_address_public_address = simulation_ue.ipv4_address_public_address
+    ue.ipv4_address_private_address = \
+        simulation_ue.ipv4_address_private_address
+    ue.ipv4_address_public_port = simulation_ue.ipv4_address_public_port
+    ue.ipv6_address = simulation_ue.ipv6_address
+
+    return ue
+
+
+def get_simulated_device_from_root_simulation(
+    db: Session, root_simulation_id, device
+):
     return db.query(models.SimulationUE).filter(
-        models.SimulationUE.simulation_instance == simulation_instance.id,
+        models.SimulationUE.root_simulation == root_simulation_id,
         models.SimulationUE.phone_number == device.phone_number
+    ).first()
+
+
+def get_simulated_device_based_on_phone_number(
+    db: Session, root_simulation_id, phone_number
+):
+    return db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        models.SimulationUE.phone_number == phone_number
+    ).first()
+
+
+def get_simulated_device_from_id(
+    db: Session, device_id
+):
+    return db.query(models.SimulationUE).filter(
+        models.SimulationUE.id == device_id,
     ).first()
 
 
@@ -510,3 +605,106 @@ def get_device_location_simulation_data(
     ).order_by(
         models.DeviceLocationSimulationData.id.desc()
     ).first()
+
+
+def create_device_location_subscription(
+    db: Session, root_simulation_id: int, ue_id: int,
+    subscription: CreateSubscription
+):
+    # Create a new Device Location Subscription
+    new_device_location_subscription = models.DeviceLocationSubscription(
+        root_simulation=root_simulation_id,
+        ue=ue_id,
+        area=json.dumps(
+            subscription.subscription_detail.area.model_dump_json()
+        ),
+        subscription_type=subscription.subscription_detail.type.value,
+        webhook_url=subscription.webhook.notification_url,
+        webhook_auth_token=subscription.webhook.notification_auth_token,
+        start_time=datetime.utcnow(),
+        expire_time=subscription.subscription_expire_time
+    )
+
+    db.add(new_device_location_subscription)
+    db.commit()
+    db.refresh(new_device_location_subscription)
+
+    logging.info(
+        "Created subscription with id" +
+        f"{new_device_location_subscription.id} (Root Simulation " +
+        f"{root_simulation_id})."
+    )
+    return new_device_location_subscription
+
+
+def get_device_location_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceLocationSubscription).filter(
+        models.DeviceLocationSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_device_location_subscription_for_root_simulation(
+    db: Session, root_simulation_id: int, subscription_id: int
+):
+    return db.query(models.DeviceLocationSubscription).filter(
+        models.DeviceLocationSubscription.id == subscription_id,
+        models.DeviceLocationSubscription.root_simulation == root_simulation_id
+    ).first()
+
+
+def delete_location_subscription(
+    db: Session, subscription: models.DeviceLocationSubscription
+):
+    db.delete(subscription)
+    db.commit()
+
+
+def get_simulated_device_id_from_simulated_device_instance(
+    db: Session, simulated_device_instance_id: int
+):
+    return db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.id == simulated_device_instance_id,
+    ).first().simulation_ue
+
+
+def create_device_location_subscription_notification(
+    db: Session, subscription_id: str, sucess: bool = None,
+    error: str = None
+):
+    new_notification = models.DeviceLocationSubscriptionNotification(
+        subscription_id=subscription_id,
+    )
+
+    if sucess:
+        new_notification.sucess = sucess
+    if error:
+        new_notification.error = error
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification
+
+
+def update_device_location_subscription_notification(
+    db: Session, notification_id: int, sucess: bool = None,
+    error: str = None
+):
+    notification = db.query(
+        models.DeviceLocationSubscriptionNotification
+    ).filter(
+        models.DeviceLocationSubscriptionNotification.id == notification_id,
+    ).first()
+
+    if sucess:
+        notification.sucess = sucess
+    if error:
+        notification.error = error
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification

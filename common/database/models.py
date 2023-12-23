@@ -2,15 +2,17 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 16:52:09
-
+# @Last Modified time: 2023-12-23 17:09:46
+import uuid
 from sqlalchemy import (
     Column,
     ForeignKey,
     Integer,
     String,
     DateTime,
-    Float
+    Float,
+    Boolean,
+    event
 )
 from common.database.database import Base
 
@@ -57,8 +59,8 @@ class SimulationUE(Base):
     __tablename__ = "simulation_ue"
 
     id = Column(Integer, primary_key=True, index=True)
-    simulation_instance = Column(
-        Integer, ForeignKey("simulation_instance.id"), nullable=False
+    root_simulation = Column(
+        Integer, ForeignKey("simulation.id"), nullable=False
     )
     phone_number = Column(String)
     network_access_identifier = Column(String)
@@ -66,6 +68,18 @@ class SimulationUE(Base):
     ipv4_address_private_address = Column(String)
     ipv4_address_public_port = Column(Integer)
     ipv6_address = Column(String)
+
+
+class SimulationUEInstance(Base):
+    __tablename__ = "simulation_ue_instance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulation_instance = Column(
+        Integer, ForeignKey("simulation_instance.id"), nullable=False
+    )
+    simulation_ue = Column(
+        Integer, ForeignKey("simulation_ue.id"), nullable=False
+    )
 
 
 class DeviceLocationSimulationData(Base):
@@ -85,3 +99,40 @@ class DeviceLocationSimulationData(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     timestamp = Column(DateTime(timezone=True))
+
+
+class DeviceLocationSubscription(Base):
+    __tablename__ = "device_location_subscription"
+
+    id = Column(
+        String, primary_key=True, index=True,
+        unique=True, nullable=False
+    )
+    root_simulation = Column(
+        Integer, ForeignKey("simulation.id"), nullable=False
+    )
+    ue = Column(
+        Integer, ForeignKey("simulation_ue.id"), nullable=False
+    )
+    area = Column(String)  # Receives the area as a JSON
+    subscription_type = Column(String)
+    webhook_url = Column(String)
+    webhook_auth_token = Column(String)
+    start_time = Column(DateTime(timezone=True))
+    expire_time = Column(DateTime(timezone=True))
+
+
+class DeviceLocationSubscriptionNotification(Base):
+    __tablename__ = "device_location_subscription_notification"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subscription_id = Column(
+        String, ForeignKey("device_location_subscription.id"), nullable=False
+    )
+    sucess = Column(Boolean, nullable=True, default=None)
+    error = Column(String, nullable=True, default=None)
+
+
+@event.listens_for(DeviceLocationSubscription, 'before_insert')
+def before_insert(mapper, connection, target):
+    target.id = str(uuid.uuid4())

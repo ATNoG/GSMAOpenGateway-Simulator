@@ -2,13 +2,13 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 19:25:55
+# @Last Modified time: 2023-12-23 10:55:02
 
 # flake8: noqa
 from __future__ import annotations
 from datetime import datetime
 import re
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from pydantic import BaseModel, Field, validator, ConfigDict
 from enum import Enum
 
@@ -25,7 +25,7 @@ class Circle(Area):
                 "latitude":40.6295718,
                 "longitude":-8.6569065,
             })
-    radius: float = Field(alias="radius")
+    radius: float = Field(alias="radius", example="10")
 
     @validator("radius")
     def radius_min(cls, value):
@@ -240,7 +240,224 @@ class VerifyLocationResponse(BaseModel):
     )
     
 
+class AreaEntered(BaseModel):
 
+    device: Device = Field(alias="device")
+    area: Area = Field(alias="area")
+    subscription_id: str = Field(alias="subscriptionId")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class AreaLeft(BaseModel):
+
+    device: Device = Field(alias="device")
+    area: Area = Field(alias="area")
+    subscription_id: str = Field(alias="subscriptionId")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class CloudEvent(BaseModel):
+
+    id: str = Field(alias="id")
+    source: str = Field(alias="source")
+    type: SubscriptionEventType = Field(alias="type")
+    specversion: str = Field(alias="specversion")
+    datacontenttype: Optional[str] = Field(alias="datacontenttype", default=None)
+    time: datetime = Field(alias="time")
+    data: Optional[Any]
+
+    @validator("source")
+    def source_min_length(cls, value):
+        assert len(value) >= 1
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class CreateSubscription(BaseModel):
+
+    webhook: Webhook = Field(alias="webhook")
+    subscription_detail: SubscriptionDetail = Field(alias="subscriptionDetail")
+    subscription_expire_time: Optional[datetime] = Field(
+        alias="subscriptionExpireTime", default=None,
+        example="2023-12-22T21:37:54.016Z"
+    )
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class EventAreaEntered(BaseModel):
+
+    id: str = Field(alias="id")
+    source: str = Field(alias="source")
+    type: SubscriptionEventType = Field(alias="type")
+    specversion: str = Field(alias="specversion")
+    datacontenttype: Optional[str] = Field(alias="datacontenttype", default=None)
+    time: datetime = Field(alias="time")
+    data: AreaEntered = Field(alias="data")
+
+    @validator("source")
+    def source_min_length(cls, value):
+        assert len(value) >= 1
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class EventAreaLeft(BaseModel):
+
+    id: str = Field(alias="id")
+    source: str = Field(alias="source")
+    type: SubscriptionEventType = Field(alias="type")
+    specversion: str = Field(alias="specversion")
+    datacontenttype: Optional[str] = Field(alias="datacontenttype", default=None)
+    time: datetime = Field(alias="time")
+    data: AreaLeft = Field(alias="data")
+
+    @validator("source")
+    def source_min_length(cls, value):
+        assert len(value) >= 1
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class EventSubscriptionEnds(BaseModel):
+
+    id: str = Field(alias="id")
+    source: str = Field(alias="source")
+    type: SubscriptionEventType = Field(alias="type")
+    specversion: str = Field(alias="specversion")
+    datacontenttype: Optional[str] = Field(alias="datacontenttype", default=None)
+    time: datetime = Field(alias="time")
+    data: SubscriptionEnds = Field(alias="data")
+
+    @validator("source")
+    def source_min_length(cls, value):
+        assert len(value) >= 1
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+
+class SubscriptionCreationEventType(Enum):
+    AREA_ENTERED = "org.camaraproject.geofencing.v0.area-entered"
+    AREA_LEFT = "org.camaraproject.geofencing.v0.area-left"
+    SUBSCRIPTION_ENDS = "org.camaraproject.geofencing.v0.subscription-ends"
+
+
+
+class SubscriptionDetail(BaseModel):
+
+    device: Device = Field(alias="device")
+    area: Union[Circle, Polygon] = Field(alias="area")
+    type: SubscriptionCreationEventType = Field(alias="type")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class SubscriptionEnds(BaseModel):
+
+    device: Device = Field(alias="device")
+    area: Union[Circle, Polygon] = Field(alias="area")
+    termination_reason: TerminationReason = Field(alias="terminationReason")
+    subscription_id: str = Field(alias="subscriptionId")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class SubscriptionEventType(Enum):
+    AREA_ENTERED = "org.camaraproject.geofencing.v0.area-entered"
+    AREA_LEFT = "org.camaraproject.geofencing.v0.area-left"
+    SUBSCRIPTION_ENDS = "org.camaraproject.geofencing.v0.subscription-ends"
+
+
+class SubscriptionInfo(BaseModel):
+
+    webhook: Webhook = Field(alias="webhook")
+    subscription_detail: SubscriptionDetail = Field(alias="subscriptionDetail")
+    subscription_expire_time: Optional[datetime] = Field(
+        alias="subscriptionExpireTime", default=None,
+        example="2023-12-22T21:37:54.016Z"
+    )
+    subscription_id: str = Field(
+        alias="subscriptionId", example="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
+    starts_at: Optional[datetime] = Field(
+        alias="startsAt", default=None,  example="2023-12-20T21:37:54.016Z")
+    expires_at: Optional[datetime] = Field(
+        alias="expiresAt", default=None,  example="2023-12-22T21:37:54.016Z"
+        )
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class TerminationReason(BaseModel):
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+class Webhook(BaseModel):
+
+    notification_url: str = Field(
+        alias="notificationUrl", example="https://application-server.com"
+    )
+    notification_auth_token: Optional[str] = Field(
+        alias="notificationAuthToken", default=None,
+        example="c8974e592c2fa383d4a3960714"
+    )
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+
+class AreaType(BaseModel):
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+AreaType.model_rebuild()
+Webhook.model_rebuild()
+TerminationReason.model_rebuild()
+SubscriptionInfo.model_rebuild()
+SubscriptionEnds.model_rebuild()
+SubscriptionDetail.model_rebuild()
+EventSubscriptionEnds.model_rebuild()
+EventAreaLeft.model_rebuild()
+EventAreaEntered.model_rebuild()
+CreateSubscription.model_rebuild()
+CloudEvent.model_rebuild()
+AreaLeft.model_rebuild()
+AreaEntered.model_rebuild()
 VerifyLocationResponse.model_rebuild()
 VerifyLocationRequest.model_rebuild()
 RetrievalLocationRequest.model_rebuild()

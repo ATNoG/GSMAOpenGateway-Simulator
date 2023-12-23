@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-15 11:45:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-17 13:32:01
+# @Last Modified time: 2023-12-21 11:36:38
 
 import pytest
 import json
@@ -43,17 +43,16 @@ def mocks_for_test_verify_endpoint(
     # Mock the Simulated UE Instance (in database)
     mocker.patch(
         target="common.database" +
-        ".crud.get_simulated_device_from_root_simulation",
-        return_value=models.SimulationUE(
+        ".crud.get_simulated_device_instance_from_root_simulation",
+        return_value=models.SimulationUEInstance(
             id=1,
-            simulation_instance=0,
-            phone_number="123456789"
+            simulation_instance=0
         )
     )
 
     # Mock the UE radius
     mocker.patch(
-        target="helpers.device_location.generate_random_radius",
+        target="common.helpers.device_location.generate_random_radius",
         return_value=device_radius
     )
 

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:13:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-13 17:02:07
+# @Last Modified time: 2023-12-22 20:52:02
 
 import time
 from datetime import datetime
@@ -19,11 +19,12 @@ class UEMovement():
     simulation_type = SimulationType.DEVICE_LOCATION
 
     def __init__(
-        self, simulation, ue, itinerary, simulation_duration,
+        self, simulation, ue, ue_instance, itinerary, simulation_duration,
         message_queue_connection, message_queue_channel
     ):
         self.simulation = simulation
         self.ue = ue
+        self.ue_instance = ue_instance
         self.itinerary = itinerary
         self.simulation_duration = simulation_duration
         self.message_queue_connection = message_queue_connection
@@ -37,8 +38,8 @@ class UEMovement():
 
     def move(self):
         logging.info(
-            f"Will start a simulation for UE '{self.ue}', " +
-            f"for {self.simulation_duration} seconds"
+            f"Will start a simulation for UE Instance '{self.ue_instance}' " +
+            f"(UE {self.ue}), for {self.simulation_duration} seconds"
         )
 
         for _, coordinates in self.itinerary:
@@ -62,7 +63,7 @@ class UEMovement():
         logging.info(f"Stopping simulation for UE '{self.ue}'.")
         self.stop_event = True
 
-    def advertise_current_location(self, location):        
+    def advertise_current_location(self, location):
         # Get current UTC time
         current_time = datetime.utcnow()
 
@@ -72,10 +73,12 @@ class UEMovement():
         # Build the payload
         simulation_data = SimulationSchemas.SimulationData(
             simulation_id=self.simulation.simulation_id,
-            child_simulation_id=self.simulation.child_simulation_id,
+            simulation_instance_id=self.simulation.simulation_instance_id,
+            child_simulation_instance_id=self.simulation.child_simulation_id,
             simulation_type=self.simulation_type,
             data=SimulationSchemas.DeviceLocationSimulationData(
                 ue=self.ue,
+                ue_instance=self.ue_instance,
                 latitude=location[0],
                 longitude=location[1],
                 timestamp=formatted_time
@@ -84,9 +87,11 @@ class UEMovement():
 
         # Output Payload for debugging
         logging.info(
-            f"New UE Position for UE with id {self.ue} (Simulation " +
-            f"Instance {self.simulation.simulation_id}, Child Simulation " +
-            f"Instance {self.simulation.child_simulation_id}) is at " +
+            f"New UE Position for UE Instance with id {self.ue_instance} " +
+            f"(UE {self.ue} Simulation " +
+            f"{self.simulation.simulation_id}, Simulation Instance " +
+            f"{self.simulation.simulation_instance_id}, Child Simulation" +
+            f" Instance {self.simulation.child_simulation_id}) is at " +
             f"{location}."
         )
 
@@ -94,5 +99,10 @@ class UEMovement():
         self.message_queue_channel.basic_publish(
             exchange='',
             routing_key=Topics.SIMULATION_DATA.value,
+            body=simulation_data.model_dump_json()
+        )
+        self.message_queue_channel.basic_publish(
+            exchange='',
+            routing_key=Topics.EVENTS.value,
             body=simulation_data.model_dump_json()
         )

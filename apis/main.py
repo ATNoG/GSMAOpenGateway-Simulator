@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-14 19:51:12
+# @Last Modified time: 2023-12-22 21:45:30
 # coding: utf-8
 
 from fastapi import FastAPI, Request, status
@@ -13,6 +13,8 @@ from routers.location_retrieval_api import router \
     as LocationRetrievalApiRouter
 from routers.location_verification_api import router\
     as LocationVerificationApiRouter
+from routers.geofencing_api import router\
+    as GeofencingApiRouter
 from routers.simulation_api import router\
     as SimulationApiRouter
 import config # noqa
@@ -21,10 +23,9 @@ open_api_json_path = "/openapi.json"
 docs_path = "/docs"
 redoc_path = "/redoc"
 
-device_location_retrieval_app_prefix_doc = "/location-retrieval/v0"
-device_location_retrieval_app_prefix_router = "/location-retrieval/v0"
-
+device_location_retrieval_app_prefix = "/location-retrieval/v0"
 device_location_verification_app_prefix = "/location-verification/v0"
+device_location_geofencing_app_prefix = "/geofencing/v0"
 simulation_app_prefix = "/simulation"
 
 ##############################################################################
@@ -117,32 +118,15 @@ device_location_retrieval_app = FastAPI(
         "(FAQs will be added in a later version of the documentation)"
     ),
     version="0.1.0-wip",
-    openapi_url=device_location_retrieval_app_prefix_doc + open_api_json_path,
-    docs_url=device_location_retrieval_app_prefix_doc + docs_path,
-    redoc_url=device_location_retrieval_app_prefix_doc + redoc_path,
-    
+    openapi_url=device_location_retrieval_app_prefix + open_api_json_path,
+    docs_url=device_location_retrieval_app_prefix + docs_path,
+    redoc_url=device_location_retrieval_app_prefix + redoc_path,
 )
 
 device_location_retrieval_app.include_router(
     router=LocationRetrievalApiRouter,
-    prefix=device_location_retrieval_app_prefix_router
+    prefix=device_location_retrieval_app_prefix
 )
-
-
-@device_location_retrieval_app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-):
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=jsonable_encoder(
-            {
-                "status": 400,
-                "code": "INVALID_ARGUMENT",
-                "message": "Invalid input"
-            }
-        ),
-    )
 
 
 ##############################################################################
@@ -212,3 +196,104 @@ device_location_verification_app.include_router(
     router=LocationVerificationApiRouter,
     prefix=device_location_verification_app_prefix
 )
+
+
+##############################################################################
+#                                                                            #
+#                              GSMA Open Gateway                             #
+#                            Device Location APIs                            #
+#                       Device Location Geofencing API                       #
+#                                                                            #
+##############################################################################
+
+device_location_geofencing_app = FastAPI(
+    title="Device geofencing API",
+    description=(
+        "API to create, retrieve, and delete event subscriptions "
+        "for geofencing a user device. \n\n# Introduction\n\nWith this "
+        "API, customers can create subscriptions for their devices "
+        "to receive notifications when a device enters or exits a "
+        "specified area.\n\nThe area provided in the request is "
+        "described by a circle determined by coordinates (latitude "
+        "and longitude) and an accuracy defined by the radius.\n\nUpon "
+        "successfully creating a subscription, the API will provide "
+        "an Event Subscription ID, and it will indicate the "
+        "subscription's expiration date.\n\nIf the geofencing-state of "
+        "a device changes, the event subscriber will be notified "
+        "back to the provided Notification-Url given by the "
+        "subscription-request.\n\nDevice geofencing API could be useful "
+        "in scenarios such as:\n\n- Tracking devices for Presetting of "
+        "Home-Settings\n\n- Tracking of logistics\n\n# Relevant terms and "
+        "definitions\n\n* **Device**: A device refers to any physical "
+        "entity that can connect to a network and participate in "
+        "network communication.\n\n* **Area**: It specifies the "
+        "geographical surface which a device is planned to enter or "
+        "exit.\n\n# API Functionality\n\nThe API exposes the following "
+        "capabilities:\n\n## Device Geofencing subscription\n\nThese "
+        "endpoints allow managing event subscription on geofencing "
+        "device location event.\n\nThe CAMARA subscription model is "
+        "detailed in the CAMARA API design guideline document and "
+        "follows CloudEvents specification.\n\nIt is mandatory in the "
+        "subscription to provide the event `type` for which the "
+        "client would like to subscribe.\n\nFollowing event`type` are "
+        "managed for this API:\n\n- "
+        "`org.camaraproject.geofencing.v0.area-entered` - Event "
+        "triggered when the device enters the given area\n\n- "
+        "`org.camaraproject.geofencing.v0.area-left` - Event "
+        "triggered when the device leaves the given area\n\nNote: "
+        "Additionally to these lists, "
+        "`org.camaraproject.geofencing.v0.subscription-ends` "
+        "notification `type` is sent when the subscription ends. "
+        "This notification does not require a dedicated subscription. "
+        "It is used when the subscription expiration time (required "
+        "by the requester) has been reached or if the API server has "
+        "to stop sending notification prematurely.\n\n### Notification "
+        "callback\n\nThis endpoint describes the event notification "
+        "received on the subscription listener side when the event "
+        "occurred. As for the subscription, detailed description of "
+        "the event notification is provided in the CAMARA API design "
+        "guideline document.\n\n**WARNING**: This callback endpoint "
+        "must be exposed on the consumer side as "
+        "`POST /{$request.body#/webhook/notificationUrl}`. Developers "
+        "may provide a callback URL on which notifications regarding "
+        "geofencing can be received from the service provider. If an "
+        "event occurs, the application will send events to the "
+        "provided webhook - 'notificationUrl'.\n\n# Further info and "
+        "support\n\n(FAQs will be added in a later version of the "
+        "documentation)\n\n"
+        "[Terms of service](http://swagger.io/terms/?_ga=2.111714564.1249190"
+        "960.1703280247-990327894.1703280247)\n\n"
+        "[Contact the developer](mailto:project-email@sample.com)\n\n"
+        "[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)\n\n"
+        "[Product documentation at Camara](https://github.com/camaraproject"
+        "/)\n\n"
+    ),
+    version="0.1.0-rc",
+    openapi_url=device_location_geofencing_app_prefix + open_api_json_path,
+    docs_url=device_location_geofencing_app_prefix + docs_path,
+    redoc_url=device_location_geofencing_app_prefix + redoc_path,
+)
+
+device_location_geofencing_app.include_router(
+    router=GeofencingApiRouter,
+    prefix=device_location_geofencing_app_prefix
+)
+
+
+# Custom Exception Handlers
+@device_location_verification_app.exception_handler(RequestValidationError)
+@device_location_retrieval_app.exception_handler(RequestValidationError)
+@device_location_geofencing_app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(
+            {
+                "status": 400,
+                "code": "INVALID_ARGUMENT",
+                "message": "Invalid input"
+            }
+        ),
+    )
