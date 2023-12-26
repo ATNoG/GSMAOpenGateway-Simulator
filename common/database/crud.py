@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 20:20:59
+# @Last Modified time: 2023-12-26 13:58:34
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -12,7 +12,7 @@ import json
 from common.apis.device_location_schemas import (
     CreateSubscription
 )
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def create_simulation(
@@ -717,3 +717,11 @@ def update_device_location_subscription_notification(
     db.refresh(notification)
 
     return notification
+
+
+def get_all_child_simulation_instances_running(db):
+    return db.query(
+            models.ChildSimulationInstance
+        ).filter(
+            models.ChildSimulationInstance.end_timestamp == None # noqa
+    ).all()
