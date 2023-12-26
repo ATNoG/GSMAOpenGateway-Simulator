@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 11:47:23
+# @Last Modified time: 2023-12-26 13:10:14
 import json
 import sys
 import logging
@@ -22,49 +22,77 @@ def main():
     simulation_dispatcher = SimulationDispatcher()
 
     def my_callback(ch, method, properties, body):
-        simulation = SimulationSchemas\
-            .SimulationAction(**json.loads(body))
+        
+        try:
+            simulation = SimulationSchemas\
+                .SimulationAction(**json.loads(body))
 
-        logging.debug(f" [x] Received {simulation}")
+            logging.debug(f" [x] Received {simulation}")
 
-        if simulation.action == SimulationOperation.START:
-            logging.info(
-                f"Simulation {simulation.child_simulation_instance_id} " +
-                "will start."
+            if simulation.action == SimulationOperation.START:
+                logging.info(
+                    f"Simulation {simulation.child_simulation_instance_id} " +
+                    "will start."
+                )
+
+                simulation_dispatcher.create_simulation(
+                    simulation_id=simulation.simulation_id,
+                    simulation_instance_id=simulation.simulation_instance_id,
+                    child_simulation_instance_id=simulation
+                    .child_simulation_instance_id,
+                    simulation_type=simulation.simulation_type,
+                    simulation_payload=simulation.simulation_config,
+                )
+
+                simulation_dispatcher.start_simulation(
+                    simulation_instance_id=simulation.simulation_instance_id,
+                    child_simulation_instance_id=simulation
+                    .child_simulation_instance_id,
+                )
+
+            elif simulation.action == SimulationOperation.STOP:
+                logging.info(
+                    "Simulation Instance " +
+                    f" {simulation.simulation_instance_id} will stop."
+                )
+
+                simulation_dispatcher.stop_simulation(
+                    simulation_instance_id=simulation.simulation_instance_id,
+                    child_simulation_instance_id=simulation
+                    .child_simulation_instance_id,
+                )
+
+        except Exception as e:
+            logging.error(
+                f"Could not process the received message. Reason: {e}."
             )
 
-            simulation_dispatcher.create_simulation(
-                simulation_id=simulation.simulation_id,
-                simulation_instance_id=simulation.simulation_instance_id,
-                child_simulation_instance_id=simulation
-                .child_simulation_instance_id,
-                simulation_type=simulation.simulation_type,
-                simulation_payload=simulation.simulation_config,
-            )
+    # Create the queue name
+    start_simulation_queue_name = str(hash(consumer_channel))
+    logging.info(
+        "Start Simulations Consumer Queue Name: "
+        f"{start_simulation_queue_name}."
+    )
 
-            simulation_dispatcher.start_simulation(
-                simulation_instance_id=simulation.simulation_instance_id,
-                child_simulation_instance_id=simulation
-                .child_simulation_instance_id,
-            )
+    # Bind to the fanout exchange
+    consumer_channel.queue_declare(queue=start_simulation_queue_name)
+    consumer_channel.queue_bind(
+        exchange=Topics.SIMULATION.value,
+        queue=start_simulation_queue_name
+    )
 
-        elif simulation.action == SimulationOperation.STOP:
-            logging.info(
-                f"Simulation Instance {simulation.simulation_instance_id} " +
-                "will stop."
-            )
+    # Start consuming -> Simulation Deletion Messages
+    consumer_channel.basic_consume(
+        queue=start_simulation_queue_name,
+        on_message_callback=my_callback,
+        auto_ack=True,
+    )
 
-            simulation_dispatcher.stop_simulation(
-                simulation_instance_id=simulation.simulation_instance_id,
-                child_simulation_instance_id=simulation
-                .child_simulation_instance_id,
-            )
-
-    # Start consuming
+    # Start consuming -> Simulation Creation Messages
     consumer_channel.basic_consume(
         queue=Topics.SIMULATION.value,
         on_message_callback=my_callback,
-        auto_ack=True
+        auto_ack=True,
     )
 
     logging.info(' [*] Waiting for messages. To exit press CTRL+C')

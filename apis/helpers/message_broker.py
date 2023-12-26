@@ -2,24 +2,42 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-13 14:26:29
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 10:14:09
+# @Last Modified time: 2023-12-26 12:59:30
 
 import logging
 import config # noqa
 from common.message_broker import connections_factory as PikaFactory
 from common.message_broker.topics import Topics
+from common.message_broker import schemas as SimulationMessageSchemas
 
 
 def send_simulation_messages(simulation_messages):
     connection, channel = PikaFactory.get_new_pika_connection_and_channel()
 
     for simulation_message in simulation_messages:
-        # Create the simulation
-        channel.basic_publish(
-            exchange='',
-            routing_key=Topics.SIMULATION.value,
-            body=simulation_message.model_dump_json()
-        )
+        
+        if (
+            simulation_message.action
+            ==
+            SimulationMessageSchemas.SimulationOperation.START
+        ):
+            # Create the simulation - uses de 1-to-1 queues
+            channel.basic_publish(
+                exchange='',
+                routing_key=Topics.SIMULATION.value,
+                body=simulation_message.model_dump_json()
+            )
+        elif (
+            simulation_message.action
+            ==
+            SimulationMessageSchemas.SimulationOperation.STOP
+        ):
+            # Stop the simulation - uses the fanout exhange
+            channel.basic_publish(
+                exchange=Topics.SIMULATION.value,
+                routing_key='',
+                body=simulation_message.model_dump_json()
+            )
 
         logging.info(
             f"Sent simulation {simulation_message.action.value} message " +
@@ -36,8 +54,8 @@ def send_events_messages(events_message):
     connection, channel = PikaFactory.get_new_pika_connection_and_channel()
     # Create the simulation
     channel.basic_publish(
-        exchange='',
-        routing_key=Topics.EVENTS.value,
+        exchange=Topics.SIMULATION.value,
+        routing_key='',
         body=events_message.model_dump_json()
     )
 
