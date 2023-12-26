@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-19 11:55:05
+# @Last Modified time: 2023-12-26 17:34:44
 
 from __future__ import annotations
 from typing import List, Union
@@ -44,7 +44,11 @@ class DeviceLocationSimulation(BaseModel):
 
 
 class SIMSwapSimulation(BaseModel):
-    sim: str
+    simulation_type: str = Field(
+        default=SimulationType.SIM_SWAP.value
+    )
+    devices: List[str]
+    timestamps_for_swaps_seconds: List[float]
 
 
 class ItineraryStop(Point):

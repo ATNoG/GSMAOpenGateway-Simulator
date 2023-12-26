@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 13:58:34
+# @Last Modified time: 2023-12-26 17:53:18
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -12,7 +12,7 @@ import json
 from common.apis.device_location_schemas import (
     CreateSubscription
 )
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 def create_simulation(
@@ -480,8 +480,33 @@ def create_simulation_entities_required_for_starting_simulation(
                 db.flush()
 
                 logging.info(
-                    "Created Child Simulation instance with id " +
+                    "Created Child Simulation instance (Type: " +
+                    "DEVICE_LOCATION) with id " +
                     f"{new_child_simulation_instance.id} for Root " +
+                    f"Simulation with id {simulation.id}"
+                )
+
+                created_entities["child_simulations"].append(
+                    new_child_simulation_instance
+                )
+            elif child_simulation["simulation_type"] == \
+                    SimulationType.SIM_SWAP.value:
+
+                # Create a new Child Simulation instance
+                new_child_simulation_instance = models.ChildSimulationInstance(
+                    simulation_instance=new_simulation_instance.id,
+                    simulation_type=child_simulation["simulation_type"],
+                    duration_seconds=max(child_simulation.get(
+                        "timestamps_for_swaps_seconds"
+                    ))
+                )
+
+                db.add(new_child_simulation_instance)
+                db.flush()
+
+                logging.info(
+                    "Created Child Simulation instance (Type: SIM_SWAP) " +
+                    f"with id  {new_child_simulation_instance.id} for Root " +
                     f"Simulation with id {simulation.id}"
                 )
 

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-13 10:52:05
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 11:07:38
+# @Last Modified time: 2023-12-26 17:40:56
 
 import config # noqa
 from common.message_broker import schemas as SimulationMessageSchemas
@@ -41,9 +41,6 @@ def compose_simulation_start_messages_for_child_simulations(
     simulation_id, simulation_instance, child_simulation_instances,
     simulation_payload
 ):
-    assert len(simulation_payload["child_simulations"]) == len(
-        child_simulation_instances)
-
     simulation_start_messages = []
 
     for i in range(len(child_simulation_instances)):

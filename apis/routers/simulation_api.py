@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 20:49:02
+# @Last Modified time: 2023-12-26 17:52:05
 # coding: utf-8
 from fastapi import APIRouter, Depends
 import json
@@ -41,10 +41,16 @@ async def create_simulation(
     # Todo: Verify if the same UE is not referenced in several simultaneous 
     # Todo: child simulations
 
+    # Todo: Consider the other remaining simulations to account for the overall
+    # Todo: simulation duration
     duration_seconds = max([
         child_simulation.duration
         for child_simulation
         in root_simulation.child_simulations
+        if isinstance(
+            child_simulation,
+            SimulationSchemas.DeviceLocationSimulation
+        )
     ])
 
     simulation = crud.create_simulation(
@@ -254,6 +260,7 @@ async def start_simulation(
                 created_entities["child_simulations"],
                 simulation_payload
             )
+
         PikaHelper.send_simulation_messages(simulation_start_messages)
     else:
         # Todo: Inform the client that the simulation cannot be started
