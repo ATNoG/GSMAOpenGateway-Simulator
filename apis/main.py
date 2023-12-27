@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 11:31:26
+# @Last Modified time: 2023-12-27 20:42:38
 # coding: utf-8
 
 from fastapi import FastAPI, Request, status
@@ -19,6 +19,8 @@ from routers.sim_swap_api import router\
     as SimSwapRouter
 from routers.simulation_api import router\
     as SimulationApiRouter
+from routers.simple_edge_discovery_api import router\
+    as SimpleEdgeDiscoveryApiRouter
 import config # noqa
 
 open_api_json_path = "/openapi.json"
@@ -29,6 +31,7 @@ device_location_retrieval_app_prefix = "/location-retrieval/v0"
 device_location_verification_app_prefix = "/location-verification/v0"
 device_location_geofencing_app_prefix = "/geofencing/v0"
 sim_swap_app_prefix = "/sim-swap/v0"
+simple_edge_discovery_app_prefix = "/eds/v0"
 simulation_app_prefix = "/simulation"
 
 ##############################################################################
@@ -322,6 +325,108 @@ sim_swap_app = FastAPI(
 sim_swap_app.include_router(
     router=SimSwapRouter,
     prefix=sim_swap_app_prefix
+)
+
+
+##############################################################################
+#                                                                            #
+#                              GSMA Open Gateway                             #
+#                            Device Location APIs                            #
+#                          Simple Edge Discovery API                         #
+#                                                                            #
+##############################################################################
+
+simple_edge_discovery_app = FastAPI(
+    title="Simple Edge Discovery API",
+    description=(
+        "# Find the closest MEC platform --- # Summary  The Simple Edge "
+        "Discovery API returns the name of the closest operator MEC "
+        "platform to a particular user device.   # Purpose Network "
+        "operators may host multiple Multi-access Edge Computing (MEC, "
+        "or &#39;Edge&#39;) platforms in a given territory. Connecting "
+        "your application to a server on the closest MEC platform means "
+        "packets travel the shortest distance between endpoints, "
+        "typically resulting in the lowest round-trip latency. Note, the "
+        "physical (GPS) location of a user device is not a reliable way "
+        "to determine the closest MEC platform, due to the way operator "
+        "networks are routed - so the operator will calculate the MEC "
+        "platform with the  _shortest network path_ to the "
+        "network-attached device identified in the API request.  Once "
+        "you have the name of the closest MEC platform to the user "
+        "device, you may:  * connect the application client on the user "
+        "device to your application server instance on that MEC "
+        "platform. Note: the address of that server instance is not "
+        "part of the API response, but should be known in advance. * or, "
+        "if you have no instance on that MEC platform, you may wish to "
+        "deploy one there.   # Usage    The API may be called either by "
+        "an application client hosted on a device attached to the "
+        "operator network (i.e. phone, tablet), or by a server.    There "
+        "is a single API endpoint: &#x60;/mecplatforms?filter&#x3D;"
+        "closest&#x60;. To call this endpoint, the API consumer must "
+        "first obtain a valid OAuth2 token from the token endpoint, and "
+        "pass it as an &#x60;Authorization&#x60; header in the API "
+        "request.     The API returns the closest MEC platform to a "
+        "given device, so that device needs to be identifiable by the "
+        "network: * if you call the API from a server, you must "
+        "explicitly pass one or more device identifiers in the HTTP "
+        "request header:   * &#x60;IP-Address&#x60;. This is the public "
+        "IP address of the user device: this can be obtained by an "
+        "application hosted on that device calling a public IP address "
+        "API (e.g. GET https://api.ipify.org?format&#x3D;json)   * "
+        "&#x60;Phone-Number&#x60; . The international E.164 format "
+        "(starting with country code), e.g. +4407123123456   * "
+        "&#x60;Network-Access-Identifier&#x60; (where available from the "
+        "API host operator)    * if you call the API from a device "
+        "attached to the operator network, you _may_ omit the explicit "
+        "device identifier(s)from the request header. If such a request "
+        "fails with a &#x60;404 Not Found&#x60; error then retry the "
+        "request but this time include a device identifier.  The "
+        "provider of the MEC Platform may be an operator, or a cloud "
+        "provider. The   # Example requests:  Examples for all API "
+        "clients:      GET /mec-platforms?filter&#x3D;closest HTTP/1.1 "
+        "Host: example.com Accept: application/json "
+        "Network-Access-Identifier: "
+        "4d596ac1-7822-4927-a3c5-d72e1f922c94@domain.com "
+        "GET /mec-platforms?filter&#x3D;closest HTTP/1.1 Host: "
+        "example.com Accept: application/json IP-Address: 84.125.93.10 "
+        "GET /mec-platforms?filter&#x3D;closest HTTP/1.1 Host: "
+        "example.com Accept: application/json Phone-Number: "
+        "441234567890      Example where API client is on a "
+        "network-attached device:      GET /mec-platforms?filter&#x3D;"
+        "closest HTTP/1.1 Host: example.com Accept: application/json  "
+        "# Responses  ## Success  A JSON object is returned containing a "
+        "&#x60;MECPlatforms&#x60; array with a single member, along with "
+        "the HTTP &#x60;200 OK&#x60; status code. The value of the "
+        "&#x60;edgeCloudProvider&#x60; object is the name of the operator "
+        "or cloud provider of the MEC Platform. &#x60;edgeResourceName&#x60; "
+        "object is the name of the closest MEC platform to the user "
+        "device. An example of this JSON object is as follows: "
+        "&#x60;&#x60;&#x60; {   \&quot;MecPlatforms\&quot;: [     {       "
+        "\&quot;edgeCloudProvider\&quot;: \&quot;AWS\&quot;,       "
+        "\&quot;edgeResourceName\&quot;: "
+        "\&quot;eu-west-2-wl1-man-wlz-1\&quot;     }   ] } "
+        "&#x60;&#x60;&#x60; ## Errors  If the authentication token is "
+        "not valid, a &#x60;401 UNAUTHENTICATED&#x60; error is returned  "
+        "If the mobile subscription parameters contain a formatting "
+        "error, a &#x60;400 INVALID_ARGUMENT&#x60; error is returned.  "
+        "If the mobile subscription cannot be identified from the "
+        "provided parameters, a &#x60;404 NOT_FOUND&#x60; error is "
+        "returned.  Any more general service failures will result in an "
+        "error in the &#x60;5xx&#x60;range with an explanation.  # Note "
+        "for Simple Edge API publishers The API publisher (i.e. the "
+        "operator implementation) must ensure that the tuple of "
+        "edgeCloudProvider+edgeResourceName in the success reponse is "
+        "unique.  # Further info and support   --- "
+    ),
+    version="0.9.3",
+    openapi_url=simple_edge_discovery_app_prefix + open_api_json_path,
+    docs_url=simple_edge_discovery_app_prefix + docs_path,
+    redoc_url=simple_edge_discovery_app_prefix + redoc_path,
+)
+
+simple_edge_discovery_app.include_router(
+    router=SimpleEdgeDiscoveryApiRouter,
+    prefix=simple_edge_discovery_app_prefix
 )
 
 
