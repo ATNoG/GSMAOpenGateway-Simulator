@@ -2,26 +2,28 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 12:13:53
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 20:35:53
+# @Last Modified time: 2023-12-27 22:00:21
 # coding: utf-8
 
 import config # noqa
 from sqlalchemy.orm import Session
+from enum import Enum
 import logging
 from typing import List  # noqa: F401
-from fastapi import APIRouter, Header, Body, Path, Depends, Query
+from fastapi import APIRouter, Header, Depends, Query
 from common.apis.simple_edge_discovery_schemas import (
     MecPlatform,
     ErrorResponse,
 )
-from fastapi import status
 from common.database import connections_factory as DBFactory
-from helpers.responses_documentation.geofencing_api import (
-    GeofencingResponses
-)
-from common.database import crud
+from common.helpers import simple_edge_discovery as SimpleEdgeDiscoveryHelpers
+from common.database import crud, models
 
 router = APIRouter()
+
+
+class FilterEnum(str, Enum):
+    closest = "closest"
 
 
 @router.get(
@@ -72,7 +74,8 @@ router = APIRouter()
     response_model_by_alias=True,
 )
 async def get_mecplatforms(
-    filter: str = Query(
+    simulation_id: int = Header(),
+    filter: FilterEnum = Query(
         None,
         description="filter the MEC Platforms according to the parameter "
         "value. For this API the only supported value is &#x60;closest&#x60;"
@@ -92,5 +95,34 @@ async def get_mecplatforms(
         "of the mobile subscription being used by the device. Optionally "
         "prefixed with &#39;+&#39;.", regex=r"/^\+?[0-9]{5,15}$/"
         ),
+    db: Session = Depends(DBFactory.get_db_session)
 ) -> List[MecPlatform]:
-    return []
+
+    # Get the Simulation Mec Platforms for the simulation
+    mec_platforms = crud.get_mec_platforms_for_root_simulation(
+        db=db,
+        root_simulation_id=simulation_id
+    )
+
+    # Todo: Replace later
+    simulation_data = models.DeviceLocationSimulationData(
+        id=1,
+        child_simulation_instance=2,
+        simulation_instance=2,
+        ue=3,
+        latitude=40.635236027955024,
+        longitude=-8.65590872154504
+    )
+
+    closest_mec_platform = SimpleEdgeDiscoveryHelpers\
+        .get_closest_mec_platform(
+            mec_platforms=mec_platforms,
+            device_location_simulation_data=simulation_data
+        )
+
+    return [
+        MecPlatform(
+            edge_cloud_provider=closest_mec_platform.edge_cloud_provider,
+            edge_resource_name=closest_mec_platform.edge_resource_name,
+        )
+    ]

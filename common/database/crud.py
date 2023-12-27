@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 21:10:55
+# @Last Modified time: 2023-12-27 21:40:26
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -868,3 +868,11 @@ def get_sim_swap_simulation_data(
     ).order_by(
         models.SimSwapSimulationData.id.desc()
     ).first()
+
+
+def get_mec_platforms_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.SimulationMecPlatform).filter(
+        models.SimulationMecPlatform.root_simulation == root_simulation_id
+    ).all()
