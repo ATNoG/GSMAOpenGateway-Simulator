@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:11:26
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 20:41:23
+# @Last Modified time: 2023-12-26 20:48:40
 import threading
 import config # noqa
 from aux.ue_sim_swap import UESIMSwap
@@ -70,7 +70,7 @@ class SIMSwapSimulation(Simulation):
         # Todo: with this
         # Todo: This threading appraoch must be replaced by a more resilient 
         # Todo: one
-        
+
         # Create threads
         self.ue_threads = [
             threading.Thread(target=ue.start_sim_swapping)

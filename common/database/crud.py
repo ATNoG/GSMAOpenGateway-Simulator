@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 17:53:18
+# @Last Modified time: 2023-12-27 10:29:20
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -750,3 +750,33 @@ def get_all_child_simulation_instances_running(db):
         ).filter(
             models.ChildSimulationInstance.end_timestamp == None # noqa
     ).all()
+
+
+def create_sim_swap_simulation_data_entry(
+    db: Session, child_simulation_instance, simulation_instance, ue_id,
+    new_msisdn, timestamp
+):
+    # Create new device location entry in DB
+    new_sim_swap_simulation_entry = models\
+        .SimSwapSimulationData(
+            child_simulation_instance=child_simulation_instance,
+            simulation_instance=simulation_instance,
+            ue=ue_id,
+            new_msisdn=new_msisdn,
+            timestamp=timestamp
+        )
+
+    db.add(new_sim_swap_simulation_entry)
+    db.commit()
+    db.refresh(new_sim_swap_simulation_entry)
+
+    logging.info(
+        "Created new SIM Swap simulation data entry for " +
+        f"Simulation Instance {simulation_instance}, " +
+        f"Child Simulation Instance {child_simulation_instance}: " +
+        f"(ue_id: {new_sim_swap_simulation_entry.ue}, " +
+        f"new_new_msisdn: {new_sim_swap_simulation_entry.new_msisdn}, " +
+        f"timestamp: {new_sim_swap_simulation_entry.timestamp})"
+    )
+
+    return new_sim_swap_simulation_entry

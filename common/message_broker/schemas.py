@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 15:40:18
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 20:33:16
+# @Last Modified time: 2023-12-27 10:31:25
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Any, Optional, List, Union
@@ -40,7 +40,7 @@ class DeviceLocationSimulationData(BaseModel):
 class SIMSwapSimulationData(BaseModel):
     ue: int
     ue_instance: int
-    msisdn: str
+    new_msisdn: str
     timestamp: str
 
 

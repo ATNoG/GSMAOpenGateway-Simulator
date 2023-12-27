@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:13:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 20:37:11
+# @Last Modified time: 2023-12-27 10:31:29
 
 import time
 from datetime import datetime
@@ -84,7 +84,7 @@ class UESIMSwap():
             data=SimulationSchemas.SIMSwapSimulationData(
                 ue=self.ue,
                 ue_instance=self.ue_instance,
-                msisdn="dummy_msisdn",
+                new_msisdn="dummy_msisdn",
                 timestamp=formatted_time
             )
         )

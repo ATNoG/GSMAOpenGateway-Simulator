@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 17:09:46
+# @Last Modified time: 2023-12-27 10:27:25
 import uuid
 from sqlalchemy import (
     Column,
@@ -131,6 +131,24 @@ class DeviceLocationSubscriptionNotification(Base):
     )
     sucess = Column(Boolean, nullable=True, default=None)
     error = Column(String, nullable=True, default=None)
+
+
+class SimSwapSimulationData(Base):
+    __tablename__ = "sim_swap_simulation_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    child_simulation_instance = Column(
+        Integer, ForeignKey("child_simulation_instance.id"), nullable=False,
+        index=True
+    )
+    simulation_instance = Column(
+        Integer, ForeignKey("simulation_instance.id"), nullable=False
+    )
+    ue = Column(
+        Integer, ForeignKey("simulation_ue.id"), nullable=False
+    )
+    new_msisdn = Column(String)
+    timestamp = Column(DateTime(timezone=True))
 
 
 @event.listens_for(DeviceLocationSubscription, 'before_insert')
