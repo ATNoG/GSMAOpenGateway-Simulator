@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 16:19:08
+# @Last Modified time: 2023-12-27 21:10:55
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -17,7 +17,8 @@ import copy
 
 
 def create_simulation(
-    db: Session, name, description, duration_seconds, devices, payload
+    db: Session, name, description, duration_seconds, devices, mec_platforms,
+    payload
 ):
     db.begin_nested()
 
@@ -68,6 +69,25 @@ def create_simulation(
                 "Created Simulated UE with id " +
                 f"{new_simulation_ue.id}."
             )
+
+        # Process the Mec Platforms
+        for mec_platform in mec_platforms:
+            new_mec_platform = models.SimulationMecPlatform(
+                root_simulation=new_simulation.id,
+                edge_cloud_provider=mec_platform.edge_cloud_provider,
+                edge_resource_name=mec_platform.edge_resource_name,
+                latitude=mec_platform.latitude,
+                longitude=mec_platform.longitude
+            )
+
+            db.add(new_mec_platform)
+            db.flush()
+
+            logging.info(
+                "Created Mec Platform with id " +
+                f"{new_mec_platform.id}."
+            )
+
         # Commit the transaction
         db.commit()
         return new_simulation

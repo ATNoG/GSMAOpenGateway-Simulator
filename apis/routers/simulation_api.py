@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 17:16:50
+# @Last Modified time: 2023-12-27 21:15:17
 # coding: utf-8
 from fastapi import APIRouter, Depends
 import json
@@ -35,6 +35,9 @@ async def create_simulation(
     # Todo: Verify if the devices in the simulations were declared 
     # Todo: as simulation devices
 
+    # Todo: Verify that the MEC platforms registered for the simulation
+    # Todo: Are unique inside the simulation itself
+
     # Todo: Verify if the devices unique information is indeed unique
     # Todo: ips, cellphone numbers, etc
 
@@ -59,6 +62,7 @@ async def create_simulation(
         description=root_simulation.description,
         duration_seconds=duration_seconds,
         devices=root_simulation.devices,
+        mec_platforms=root_simulation.mec_platforms,
         payload=json.dumps(root_simulation.model_dump_json())
     )
 
@@ -72,6 +76,7 @@ async def create_simulation(
         duration_seconds=simulation.duration_seconds,
         name=simulation.name,
         description=simulation.description,
+        mec_platforms=root_simulation.mec_platforms,
         devices=root_simulation.devices,
         child_simulations=root_simulation.child_simulations
     )
@@ -118,6 +123,9 @@ async def get_simulation(
         name=simulation.name,
         description=simulation.description,
         devices=simulated_devices,
+        mec_platforms=json.loads(
+            json.loads(simulation.payload)
+        )["mec_platforms"],
         child_simulations=root_simulation_from_payload.child_simulations
     )
 
@@ -156,6 +164,7 @@ async def update_simulation(
         name=simulation.name,
         description=simulation.description,
         devices=root_simulation_from_payload.devices,
+        mec_platforms=root_simulation_from_payload.mec_platforms,
         child_simulations=root_simulation_from_payload.child_simulations
     )
 

@@ -2,14 +2,15 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 17:34:44
+# @Last Modified time: 2023-12-27 20:54:56
 
 from __future__ import annotations
-from typing import List, Union
-from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Union, Optional
+from pydantic import BaseModel, Field, ConfigDict, validator
 import config # noqa
 from common.apis.device_location_schemas import Device, Point
 from common.simulation.simulation_types import SimulationType
+from common.apis.simple_edge_discovery_schemas import MecPlatform
 
 
 class SimulationUE(Device):
@@ -25,7 +26,13 @@ class RootSimulationCreate(BaseModel):
     name: str
     description: str
     devices: List[SimulationUE]
-    child_simulations: List[Union[SIMSwapSimulation, DeviceLocationSimulation]]
+    mec_platforms: Optional[List[SimulationMecPlatform]] = Field(default=[])
+    child_simulations: List[
+        Union[
+            SIMSwapSimulation,
+            DeviceLocationSimulation
+        ]
+    ]
 
 
 class RootSimulationCreateResponse(RootSimulationCreate):
@@ -55,6 +62,36 @@ class ItineraryStop(Point):
     label: str
 
 
+class SimulationMecPlatform(MecPlatform):
+
+    latitude: float = Field(alias="latitude")
+    longitude: float = Field(alias="longitude")
+
+    @validator("latitude")
+    def latitude_max(cls, value):
+        assert value <= 90
+        return value
+
+    @validator("latitude")
+    def latitude_min(cls, value):
+        assert value >= -90
+        return value
+
+    @validator("longitude")
+    def longitude_max(cls, value):
+        assert value <= 180
+        return value
+
+    @validator("longitude")
+    def longitude_min(cls, value):
+        assert value >= -180
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
 Point.model_rebuild()
 Device.model_rebuild()
 SimulationUE.model_rebuild()
@@ -62,3 +99,4 @@ RootSimulationCreate.model_rebuild()
 RootSimulationCreateResponse.model_rebuild()
 DeviceLocationSimulation.model_rebuild()
 ItineraryStop.model_rebuild()
+SimulationMecPlatform.model_rebuild()

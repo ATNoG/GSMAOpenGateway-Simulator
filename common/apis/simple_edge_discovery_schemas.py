@@ -2,12 +2,10 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-27 11:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 20:31:44
+# @Last Modified time: 2023-12-27 21:07:33
 from __future__ import annotations
-from datetime import datetime
-import re
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field, validator, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ErrorResponse(BaseModel):
@@ -22,10 +20,10 @@ class ErrorResponse(BaseModel):
 
 
 class MecPlatform(BaseModel):
-    edge_cloud_provider: Optional[str] = Field(
+    edge_cloud_provider: str = Field(
         alias="edgeCloudProvider", default=None
     )
-    edge_resource_name: Optional[Dict[str, Any]] = Field(
+    edge_resource_name: str = Field(
         alias="edgeResourceName", default=None
     )
 
