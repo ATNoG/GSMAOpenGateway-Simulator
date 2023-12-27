@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 14:15:29
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:06:39
+# @Last Modified time: 2023-12-27 14:27:28
 # coding: utf-8
 from fastapi import APIRouter, Body, Header, Depends
 
@@ -20,7 +20,6 @@ from common.apis.device_location_schemas import (
     VerificationResult,
     VerifyLocationResponse
 )
-from datetime import datetime
 
 router = APIRouter()
 
@@ -53,7 +52,7 @@ async def verify_location(
         device=verify_location_request.device
     )
 
-    # Obtain the simulate data regarding that Simulated UE
+    # Obtain the simulated data regarding that Simulated UE
     device_location_data = crud.get_device_location_simulation_data(
         db=db,
         root_simulation_id=simulation_id,

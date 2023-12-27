@@ -2,11 +2,12 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:09:54
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 13:10:07
+# @Last Modified time: 2023-12-27 16:50:13
 
 import config # noqa
 import logging
 from device_location_simulation import DeviceLocationSimulation
+from sim_swap_simulation import SIMSwapSimulation
 from common.simulation.simulation_types import SimulationType
 from common.database import connections_factory as DBFactory
 
@@ -21,10 +22,28 @@ class SimulationDispatcher:
         self, simulation_id, simulation_instance_id,
         child_simulation_instance_id, simulation_type, simulation_payload
     ):
-
         if simulation_type == SimulationType.DEVICE_LOCATION:
             # Create Simulation
             simulation = DeviceLocationSimulation(
+                db=self.db,
+                simulation_id=simulation_id,
+                simulation_instance_id=simulation_instance_id,
+                child_simulation_id=child_simulation_instance_id,
+                simulation_payload=simulation_payload
+            )
+
+            if simulation_instance_id not in self.simulations:
+                self.simulations[simulation_instance_id] = {
+                    child_simulation_instance_id: simulation
+                }
+            else:
+                self.simulations[
+                    simulation_instance_id
+                ][child_simulation_instance_id] = simulation
+
+        elif simulation_type == SimulationType.SIM_SWAP:
+
+            simulation = SIMSwapSimulation(
                 db=self.db,
                 simulation_id=simulation_id,
                 simulation_instance_id=simulation_instance_id,

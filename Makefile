@@ -58,3 +58,10 @@ run_device_location_geofencing_api:
 	cd apis && \
      echo -e "\nLaunching FastAPI server for the Device Location Geofencing API...\n" && \
     uvicorn main:device_location_geofencing_app --reload --port 8003
+
+# SIM Swap API
+run_sim_swap_api:
+	source venv/bin/activate && \
+	cd apis && \
+    echo -e "\nLaunching FastAPI server for the SIM Swap API...\n" && \
+    uvicorn main:sim_swap_app --reload --port 8004

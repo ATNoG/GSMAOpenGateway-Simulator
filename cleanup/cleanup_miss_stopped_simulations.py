@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-26 13:17:25
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 14:12:59
+# @Last Modified time: 2023-12-26 17:53:06
 from celery import Celery
 from celery.schedules import crontab
 from datetime import datetime, timedelta
@@ -29,7 +29,6 @@ def cleanup_miss_stopped_child_simulation():
     all_child_simulation_instances_running = crud\
         .get_all_child_simulation_instances_running(db)
 
-    
     ALL_SIMULATION_OK = True
     for child_sim_inst in all_child_simulation_instances_running:
 

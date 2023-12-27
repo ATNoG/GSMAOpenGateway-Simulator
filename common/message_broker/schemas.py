@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 15:40:18
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 21:21:32
+# @Last Modified time: 2023-12-27 10:31:25
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Any, Optional, List, Union
@@ -34,6 +34,13 @@ class DeviceLocationSimulationData(BaseModel):
                             description="Valid range: -90 to 90")
     longitude: float = Field(..., ge=-180, le=180,
                              description="Valid range: -180 to 180")
+    timestamp: str
+
+
+class SIMSwapSimulationData(BaseModel):
+    ue: int
+    ue_instance: int
+    new_msisdn: str
     timestamp: str
 
 
