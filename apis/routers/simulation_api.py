@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 17:52:05
+# @Last Modified time: 2023-12-27 17:16:50
 # coding: utf-8
 from fastapi import APIRouter, Depends
 import json
@@ -249,7 +249,8 @@ async def start_simulation(
         SimulationHelpers\
             .update_simulation_payload_with_correct_device_ids(
                 simulation_payload=simulation_payload,
-                simulated_ues=created_entities["simulated_ues"]
+                simulated_ues=created_entities["simulated_ues"],
+                child_simulations=created_entities["child_simulations"]
             )
 
         # Create the pika message to trigger the simulation
@@ -257,8 +258,7 @@ async def start_simulation(
             .compose_simulation_start_messages_for_child_simulations(
                 simulation.id,
                 created_entities["simulation_instance"],
-                created_entities["child_simulations"],
-                simulation_payload
+                created_entities["child_simulations"]
             )
 
         PikaHelper.send_simulation_messages(simulation_start_messages)
@@ -299,7 +299,7 @@ async def stop_simulation(
         # Get the last child simulation instances. These are the ones that must
         # be stopped
         child_simulation_instances = crud\
-            .get_last_child_simulation_instance_from_root_simulation(
+            .get_child_simulation_instances_from_root_simulation(
                 db=db,
                 root_simulation_id=simulation.id
             )
@@ -340,7 +340,7 @@ async def simulation_status(
 
     # Todo: What if the simulation does not exist?
     if not simulation:
-        return False
+        return "SIMULATION_NOT_FOUND"
 
     # If the simulation can stop, delegate to the simulations business logic
     # module

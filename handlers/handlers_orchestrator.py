@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:24:10
+# @Last Modified time: 2023-12-27 16:08:33
 import sys
 import json
 import logging
@@ -23,6 +23,7 @@ def main():
     db = DBFactory.new_db_session()
 
     def handlers_callback(ch, method, properties, body):
+
         simulation_data = SimulationSchemas\
             .SimulationData(**json.loads(body))
 

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:27:25
+# @Last Modified time: 2023-12-27 14:42:33
 import uuid
 from sqlalchemy import (
     Column,
@@ -94,7 +94,7 @@ class DeviceLocationSimulationData(Base):
         Integer, ForeignKey("simulation_instance.id"), nullable=False
     )
     ue = Column(
-        Integer, ForeignKey("simulation_ue.id"), nullable=False
+        Integer, ForeignKey("simulation_ue_instance.id"), nullable=False
     )
     latitude = Column(Float)
     longitude = Column(Float)
@@ -145,7 +145,7 @@ class SimSwapSimulationData(Base):
         Integer, ForeignKey("simulation_instance.id"), nullable=False
     )
     ue = Column(
-        Integer, ForeignKey("simulation_ue.id"), nullable=False
+        Integer, ForeignKey("simulation_ue_instance.id"), nullable=False
     )
     new_msisdn = Column(String)
     timestamp = Column(DateTime(timezone=True))

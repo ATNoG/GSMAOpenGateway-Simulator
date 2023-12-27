@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:09:54
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 20:42:15
+# @Last Modified time: 2023-12-27 16:50:13
 
 import config # noqa
 import logging
@@ -22,7 +22,6 @@ class SimulationDispatcher:
         self, simulation_id, simulation_instance_id,
         child_simulation_instance_id, simulation_type, simulation_payload
     ):
-        print("simulation_type -", simulation_type)
         if simulation_type == SimulationType.DEVICE_LOCATION:
             # Create Simulation
             simulation = DeviceLocationSimulation(
@@ -43,7 +42,7 @@ class SimulationDispatcher:
                 ][child_simulation_instance_id] = simulation
 
         elif simulation_type == SimulationType.SIM_SWAP:
-            print("SIM_SWAP")
+
             simulation = SIMSwapSimulation(
                 db=self.db,
                 simulation_id=simulation_id,
@@ -60,7 +59,7 @@ class SimulationDispatcher:
                 self.simulations[
                     simulation_instance_id
                 ][child_simulation_instance_id] = simulation
-                
+
         elif not simulation_type:
             # Improve this later
             raise ValueError("Invalid simulation type") # noqa

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:35:36
+# @Last Modified time: 2023-12-27 16:19:08
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -13,6 +13,7 @@ from common.apis.device_location_schemas import (
     CreateSubscription
 )
 from datetime import datetime
+import copy
 
 
 def create_simulation(
@@ -466,53 +467,76 @@ def create_simulation_entities_required_for_starting_simulation(
 
         # Process the child simulations
         for child_simulation in simulation_payload["child_simulations"]:
+
             if child_simulation["simulation_type"] == \
                     SimulationType.DEVICE_LOCATION.value:
 
-                # Create a new Child Simulation instance
-                new_child_simulation_instance = models.ChildSimulationInstance(
-                    simulation_instance=new_simulation_instance.id,
-                    simulation_type=child_simulation["simulation_type"],
-                    duration_seconds=child_simulation["duration"]
-                )
+                for device in child_simulation["devices"]:
 
-                db.add(new_child_simulation_instance)
-                db.flush()
+                    # Create a new Child Simulation instance
+                    new_child_simulation_instance = models\
+                        .ChildSimulationInstance(
+                            simulation_instance=new_simulation_instance.id,
+                            simulation_type=child_simulation.get(
+                                "simulation_type"
+                            ),
+                            duration_seconds=child_simulation.get(
+                                "duration"
+                            )
+                        )
 
-                logging.info(
-                    "Created Child Simulation instance (Type: " +
-                    "DEVICE_LOCATION) with id " +
-                    f"{new_child_simulation_instance.id} for Root " +
-                    f"Simulation with id {simulation.id}"
-                )
+                    db.add(new_child_simulation_instance)
+                    db.flush()
 
-                created_entities["child_simulations"].append(
-                    new_child_simulation_instance
-                )
+                    logging.info(
+                        "Created Child Simulation instance (Type: " +
+                        "DEVICE_LOCATION) with id " +
+                        f"{new_child_simulation_instance.id} for Root " +
+                        f"Simulation with id {simulation.id}"
+                    )
+
+                    child_simulation["devices"] = [device]
+                    created_entities["child_simulations"].append(
+                        (
+                            copy.deepcopy(new_child_simulation_instance),
+                            copy.deepcopy(child_simulation)
+                        )
+                    )
+
             elif child_simulation["simulation_type"] == \
                     SimulationType.SIM_SWAP.value:
 
-                # Create a new Child Simulation instance
-                new_child_simulation_instance = models.ChildSimulationInstance(
-                    simulation_instance=new_simulation_instance.id,
-                    simulation_type=child_simulation["simulation_type"],
-                    duration_seconds=max(child_simulation.get(
-                        "timestamps_for_swaps_seconds"
-                    ))
-                )
+                for device in child_simulation["devices"]:
+                    # Create a new Child Simulation instance
+                    new_child_simulation_instance = models\
+                        .ChildSimulationInstance(
+                            simulation_instance=new_simulation_instance.id,
+                            simulation_type=child_simulation.get(
+                                "simulation_type"
+                            ),
+                            duration_seconds=max(
+                                child_simulation.get(
+                                    "timestamps_for_swaps_seconds"
+                                )
+                            )
+                        )
 
-                db.add(new_child_simulation_instance)
-                db.flush()
+                    db.add(new_child_simulation_instance)
+                    db.flush()
 
-                logging.info(
-                    "Created Child Simulation instance (Type: SIM_SWAP) " +
-                    f"with id  {new_child_simulation_instance.id} for Root " +
-                    f"Simulation with id {simulation.id}"
-                )
+                    logging.info(
+                        "Created Child Simulation instance (Type: SIM_SWAP) " +
+                        f"with id  {new_child_simulation_instance.id} for " +
+                        f"Root Simulation with id {simulation.id}"
+                    )
 
-                created_entities["child_simulations"].append(
-                    new_child_simulation_instance
-                )
+                    child_simulation["devices"] = [device]
+                    created_entities["child_simulations"].append(
+                        (
+                            copy.deepcopy(new_child_simulation_instance),
+                            copy.deepcopy(child_simulation)
+                        )
+                    )
 
         # Commit the transaction
         db.commit()
@@ -539,7 +563,7 @@ def get_last_simulation_instance_from_root_simulation(
     ).order_by(models.SimulationInstance.id.desc()).first()
 
 
-def get_last_child_simulation_instance_from_root_simulation(
+def get_child_simulation_instances_from_root_simulation(
     db: Session, root_simulation_id
 ):
     return db.query(models.ChildSimulationInstance).filter(
@@ -583,6 +607,29 @@ def get_simulated_device_instance_from_root_simulation(
     ue.ipv6_address = simulation_ue.ipv6_address
 
     return ue
+
+
+def get_simulated_device_instance_from_root_simulation_via_phone_number(
+    db: Session, root_simulation_id, device_phone_number
+):
+    simulation_instance = get_last_simulation_instance_from_root_simulation(
+        db=db,
+        root_simulation_id=root_simulation_id
+    )
+
+    simulation_ue = db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        models.SimulationUE.phone_number == device_phone_number
+    ).first()
+
+    if not simulation_ue:
+        return None
+
+    return db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.simulation_instance
+        == simulation_instance.id,
+        models.SimulationUEInstance.simulation_ue == simulation_ue.id
+    ).first()
 
 
 def get_simulated_device_from_root_simulation(
@@ -780,3 +827,24 @@ def create_sim_swap_simulation_data_entry(
     )
 
     return new_sim_swap_simulation_entry
+
+
+def get_sim_swap_simulation_data(
+    db: Session, root_simulation_id, ue: models.SimulationUE = None,
+    ue_id: int = None
+):
+    if not ue_id:
+        ue_id = ue.id
+
+    simulation_instance = get_last_simulation_instance_from_root_simulation(
+        db=db,
+        root_simulation_id=root_simulation_id
+    )
+
+    return db.query(models.SimSwapSimulationData).filter(
+        models.SimSwapSimulationData.simulation_instance ==
+        simulation_instance.id,
+        models.SimSwapSimulationData.ue == ue_id
+    ).order_by(
+        models.SimSwapSimulationData.id.desc()
+    ).first()

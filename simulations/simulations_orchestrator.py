@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 13:10:14
+# @Last Modified time: 2023-12-27 16:50:17
 import json
 import sys
 import logging
@@ -22,7 +22,7 @@ def main():
     simulation_dispatcher = SimulationDispatcher()
 
     def my_callback(ch, method, properties, body):
-        
+
         try:
             simulation = SimulationSchemas\
                 .SimulationAction(**json.loads(body))

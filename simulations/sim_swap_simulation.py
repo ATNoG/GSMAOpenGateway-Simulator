@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:11:26
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-26 20:48:40
+# @Last Modified time: 2023-12-27 16:49:25
 import threading
 import config # noqa
 from aux.ue_sim_swap import UESIMSwap
@@ -35,7 +35,7 @@ class SIMSwapSimulation(Simulation):
             self.signal_that_simulation_ended()
 
     def start_simulation(self):
-
+        self.sim_swap_ues = []
         # Start the simulation
         # The super start_simulation will handle everything that is common to
         # all types of simulations - e.g., updating the simulation's
