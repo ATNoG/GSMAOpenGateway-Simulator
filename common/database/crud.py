@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:29:20
+# @Last Modified time: 2023-12-27 10:35:36
 
 from sqlalchemy.orm import Session
 from common.database import models

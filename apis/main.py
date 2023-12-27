@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 21:45:30
+# @Last Modified time: 2023-12-27 11:31:26
 # coding: utf-8
 
 from fastapi import FastAPI, Request, status
@@ -15,6 +15,8 @@ from routers.location_verification_api import router\
     as LocationVerificationApiRouter
 from routers.geofencing_api import router\
     as GeofencingApiRouter
+from routers.sim_swap_api import router\
+    as SimSwapRouter
 from routers.simulation_api import router\
     as SimulationApiRouter
 import config # noqa
@@ -26,6 +28,7 @@ redoc_path = "/redoc"
 device_location_retrieval_app_prefix = "/location-retrieval/v0"
 device_location_verification_app_prefix = "/location-verification/v0"
 device_location_geofencing_app_prefix = "/geofencing/v0"
+sim_swap_app_prefix = "/sim-swap/v0"
 simulation_app_prefix = "/simulation"
 
 ##############################################################################
@@ -279,11 +282,54 @@ device_location_geofencing_app.include_router(
     prefix=device_location_geofencing_app_prefix
 )
 
+##############################################################################
+#                                                                            #
+#                              GSMA Open Gateway                             #
+#                            Device Location APIs                            #
+#                                SIM Swap API                                #
+#                                                                            #
+##############################################################################
+
+
+sim_swap_app = FastAPI(
+    title="SIM Swap",
+    description=(
+        "SIM Swap API provides the customer the ability to "
+        "obtain information on any recent SIM pairing change "
+        "related to the User's mobile account.\n\nThis API derives "
+        "from the GSMA Mobile Connect Account Takeover Protection "
+        "specification [Mobile Connect Account Takeover Protection]"
+        "(https://www.gsma.com/identity/wp-content/uploads/2022/12/"
+        "IDY.24-Mobile-Connect-Account-Takeover-Protection-Definition-"
+        "and-Technical-Requirements-v2.0.pdf). For more about Mobile "
+        "Connect, please see [about Mobile Connect]"
+        "(https://mobileconnect.io/).\n\nThe API provides 2 operations: "
+        "\n\n- POST retrieve-date : Provides timestamp of latest SIM swap "
+        "\n\n- POST check: Checks if SIM swap has been performed during a "
+        "past period (defined in the request with 'maxAge' attribute).\n\n"
+        "[Terms of service](http://swagger.io/terms/)\n\n"
+        "[Contact the developer](mailto:project-email@sample.com)\n\n"
+        "[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)\n\n"
+        "[Product documentation at Camara](https://github.com/camaraproject"
+        "/)\n\n"
+    ),
+    version="0.4.0",
+    openapi_url=sim_swap_app_prefix + open_api_json_path,
+    docs_url=sim_swap_app_prefix + docs_path,
+    redoc_url=sim_swap_app_prefix + redoc_path,
+)
+
+sim_swap_app.include_router(
+    router=SimSwapRouter,
+    prefix=sim_swap_app_prefix
+)
+
 
 # Custom Exception Handlers
 @device_location_verification_app.exception_handler(RequestValidationError)
 @device_location_retrieval_app.exception_handler(RequestValidationError)
 @device_location_geofencing_app.exception_handler(RequestValidationError)
+@sim_swap_app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ):
