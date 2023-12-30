@@ -2,13 +2,12 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-30 18:07:47
+# @Last Modified time: 2023-12-30 20:52:11
 
 
 from fastapi.responses import JSONResponse
 import config # noqa
 from common.database import models
-from common.apis.simple_edge_discovery_schemas import ErrorResponse
 from typing import List
 from geopy.distance import geodesic
 from common.apis.simple_edge_discovery_schemas import ErrorResponse
@@ -17,9 +16,9 @@ import logging
 
 def error_message_simulation_not_running():
     return JSONResponse(
-            status_code=404,
+            status_code=412,
             content=ErrorResponse(
-                status=404,
+                status=412,
                 code="SIMULATION.NOT_RUNNING",
                 message="The simulation is not running. Thus, you cannot " +
                 "get its generated data"
@@ -29,10 +28,10 @@ def error_message_simulation_not_running():
 
 def error_message_simulation_is_starting():
     return JSONResponse(
-            status_code=404,
+            status_code=412,
             content=ErrorResponse(
-                status=404,
-                code="SIMULATION.IS_STARTING",
+                status=412,
+                code="SIMULATION.NOT_RUNNING",
                 message="The simulation is still starting. Thus, you cannot " +
                 "get its generated data"
             ).__dict__

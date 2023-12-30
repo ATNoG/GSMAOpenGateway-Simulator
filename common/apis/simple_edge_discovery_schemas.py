@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-27 11:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-30 16:36:34
+# @Last Modified time: 2023-12-30 20:34:42
 from __future__ import annotations
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
@@ -21,10 +21,10 @@ class ErrorResponse(BaseModel):
 
 class MecPlatform(BaseModel):
     edge_cloud_provider: str = Field(
-        alias="edgeCloudProvider", default=None
+        alias="edgeCloudProvider", default=None, example="Altice"
     )
     edge_resource_name: str = Field(
-        alias="edgeResourceName", default=None
+        alias="edgeResourceName", default=None, example="alb-wl1-ave-wlz-012"
     )
 
     model_config = ConfigDict(
