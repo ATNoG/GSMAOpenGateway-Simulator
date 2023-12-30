@@ -19,6 +19,7 @@ urllib3==2.1.0
 utm==0.7.0
 pyproj==3.6.1
 celery==5.3.6
+geopy==2.4.1
 # Testing
 httpx==0.25.2
 pytest==7.4.3

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 14:42:33
+# @Last Modified time: 2023-12-27 21:06:26
 import uuid
 from sqlalchemy import (
     Column,
@@ -149,6 +149,19 @@ class SimSwapSimulationData(Base):
     )
     new_msisdn = Column(String)
     timestamp = Column(DateTime(timezone=True))
+
+
+class SimulationMecPlatform(Base):
+    __tablename__ = "simulation_mec_platform"
+
+    id = Column(Integer, primary_key=True, index=True)
+    root_simulation = Column(
+        Integer, ForeignKey("simulation.id"), nullable=False
+    )
+    edge_cloud_provider = Column(String)
+    edge_resource_name = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
 
 
 @event.listens_for(DeviceLocationSubscription, 'before_insert')

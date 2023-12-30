@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-27 11:15:07
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 17:26:41
+# @Last Modified time: 2023-12-30 17:45:32
 # coding: utf-8
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Body, Header, Depends
@@ -39,7 +39,7 @@ async def check_sim_swap(
 ):
     # We can only retrieve locations if the simulation is active
     if not crud.simulation_is_running(db=db, simulation_id=simulation_id):
-        logging.info(
+        logging.error(
             "Impossible to retrieve SIM swaps for Simulation " +
             f"{simulation_id}. This Simulation is not running. It must be " +
             "started first."

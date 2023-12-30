@@ -65,3 +65,10 @@ run_sim_swap_api:
 	cd apis && \
     echo -e "\nLaunching FastAPI server for the SIM Swap API...\n" && \
     uvicorn main:sim_swap_app --reload --port 8004
+
+# Simple Edge Discovery API
+run_simple_edge_discovery_api:
+	source venv/bin/activate && \
+	cd apis && \
+    echo -e "\nLaunching FastAPI server for the Simple Edge Discovery API...\n" && \
+    uvicorn main:simple_edge_discovery_app --reload --port 8005

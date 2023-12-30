@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 16:19:08
+# @Last Modified time: 2023-12-30 17:43:11
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -14,10 +14,12 @@ from common.apis.device_location_schemas import (
 )
 from datetime import datetime
 import copy
+from sqlalchemy import or_
 
 
 def create_simulation(
-    db: Session, name, description, duration_seconds, devices, payload
+    db: Session, name, description, duration_seconds, devices, mec_platforms,
+    payload
 ):
     db.begin_nested()
 
@@ -68,6 +70,25 @@ def create_simulation(
                 "Created Simulated UE with id " +
                 f"{new_simulation_ue.id}."
             )
+
+        # Process the Mec Platforms
+        for mec_platform in mec_platforms:
+            new_mec_platform = models.SimulationMecPlatform(
+                root_simulation=new_simulation.id,
+                edge_cloud_provider=mec_platform.edge_cloud_provider,
+                edge_resource_name=mec_platform.edge_resource_name,
+                latitude=mec_platform.latitude,
+                longitude=mec_platform.longitude
+            )
+
+            db.add(new_mec_platform)
+            db.flush()
+
+            logging.info(
+                "Created Mec Platform with id " +
+                f"{new_mec_platform.id}."
+            )
+
         # Commit the transaction
         db.commit()
         return new_simulation
@@ -650,6 +671,23 @@ def get_simulated_device_based_on_phone_number(
     ).first()
 
 
+def get_simulated_device_based_on_several_parameters(
+    db: Session, root_simulation_id, phone_number, network_access_identifier,
+    ip_address
+):
+    # We assume that all the above listed attributes are UNIQUE.
+    return db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        or_(
+            models.SimulationUE.phone_number == phone_number,
+            models.SimulationUE.ipv4_address_public_address == ip_address,
+            models.SimulationUE.ipv6_address == ip_address,
+            models.SimulationUE.network_access_identifier
+            == network_access_identifier,
+        )
+    ).first()
+
+
 def get_simulated_device_from_id(
     db: Session, device_id
 ):
@@ -659,7 +697,7 @@ def get_simulated_device_from_id(
 
 
 def get_device_location_simulation_data(
-    db: Session, root_simulation_id, ue: models.SimulationUE = None,
+    db: Session, root_simulation_id, ue: models.SimulationUEInstance = None,
     ue_id: int = None
 ):
     if not ue_id:
@@ -848,3 +886,11 @@ def get_sim_swap_simulation_data(
     ).order_by(
         models.SimSwapSimulationData.id.desc()
     ).first()
+
+
+def get_mec_platforms_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.SimulationMecPlatform).filter(
+        models.SimulationMecPlatform.root_simulation == root_simulation_id
+    ).all()
