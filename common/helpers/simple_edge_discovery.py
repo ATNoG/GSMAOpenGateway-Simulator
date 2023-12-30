@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 21:59:09
+# @Last Modified time: 2023-12-30 18:07:47
 
 
 from fastapi.responses import JSONResponse
@@ -11,6 +11,7 @@ from common.database import models
 from common.apis.simple_edge_discovery_schemas import ErrorResponse
 from typing import List
 from geopy.distance import geodesic
+from common.apis.simple_edge_discovery_schemas import ErrorResponse
 import logging
 
 
@@ -22,6 +23,44 @@ def error_message_simulation_not_running():
                 code="SIMULATION.NOT_RUNNING",
                 message="The simulation is not running. Thus, you cannot " +
                 "get its generated data"
+            ).__dict__
+        )
+
+
+def error_message_simulation_is_starting():
+    return JSONResponse(
+            status_code=404,
+            content=ErrorResponse(
+                status=404,
+                code="SIMULATION.IS_STARTING",
+                message="The simulation is still starting. Thus, you cannot " +
+                "get its generated data"
+            ).__dict__
+        )
+
+
+def error_message_device_not_found():
+    return JSONResponse(
+            status_code=404,
+            content=ErrorResponse(
+                status=404,
+                code="NOT_FOUND",
+                message="No device found for the specified parameters"
+            ).__dict__
+        )
+
+
+def error_message_insufficient_parameters():
+    return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                status=400,
+                code="INVALID_ARGUMENT",
+                message="Insufficient parameters: At least one of " +
+                "Network-Access-Identifier, Phone-Number or IP-Address must " +
+                "be specified, or, the API must be called by a client on a " +
+                "netwok-attached device (hence passing the source IP in the " +
+                "request header)"
             ).__dict__
         )
 

@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 21:40:26
+# @Last Modified time: 2023-12-30 17:43:11
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -14,6 +14,7 @@ from common.apis.device_location_schemas import (
 )
 from datetime import datetime
 import copy
+from sqlalchemy import or_
 
 
 def create_simulation(
@@ -670,6 +671,23 @@ def get_simulated_device_based_on_phone_number(
     ).first()
 
 
+def get_simulated_device_based_on_several_parameters(
+    db: Session, root_simulation_id, phone_number, network_access_identifier,
+    ip_address
+):
+    # We assume that all the above listed attributes are UNIQUE.
+    return db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        or_(
+            models.SimulationUE.phone_number == phone_number,
+            models.SimulationUE.ipv4_address_public_address == ip_address,
+            models.SimulationUE.ipv6_address == ip_address,
+            models.SimulationUE.network_access_identifier
+            == network_access_identifier,
+        )
+    ).first()
+
+
 def get_simulated_device_from_id(
     db: Session, device_id
 ):
@@ -679,7 +697,7 @@ def get_simulated_device_from_id(
 
 
 def get_device_location_simulation_data(
-    db: Session, root_simulation_id, ue: models.SimulationUE = None,
+    db: Session, root_simulation_id, ue: models.SimulationUEInstance = None,
     ue_id: int = None
 ):
     if not ue_id:

@@ -2,9 +2,9 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-27 11:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 21:07:33
+# @Last Modified time: 2023-12-30 16:36:34
 from __future__ import annotations
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 
