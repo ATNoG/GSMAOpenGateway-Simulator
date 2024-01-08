@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 10:54:41
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-30 18:34:27
+# @Last Modified time: 2024-01-08 10:36:03
 # coding: utf-8
 
 from fastapi import FastAPI, Request, status
@@ -21,6 +21,8 @@ from routers.simulation_api import router\
     as SimulationApiRouter
 from routers.simple_edge_discovery_api import router\
     as SimpleEdgeDiscoveryApiRouter
+from routers.device_status_api import router\
+    as DeviceStatusApiRouter
 import config # noqa
 
 open_api_json_path = "/openapi.json"
@@ -32,6 +34,7 @@ device_location_verification_app_prefix = "/location-verification/v0"
 device_location_geofencing_app_prefix = "/geofencing/v0"
 sim_swap_app_prefix = "/sim-swap/v0"
 simple_edge_discovery_app_prefix = "/eds/v0"
+device_status_app_prefix = "/device-status/v0"
 simulation_app_prefix = "/simulation"
 
 ##############################################################################
@@ -432,6 +435,130 @@ simple_edge_discovery_app = FastAPI(
 simple_edge_discovery_app.include_router(
     router=SimpleEdgeDiscoveryApiRouter,
     prefix=simple_edge_discovery_app_prefix
+)
+
+
+##############################################################################
+#                                                                            #
+#                              GSMA Open Gateway                             #
+#                            Device Location APIs                            #
+#                              Device Status API                             #
+#                                                                            #
+##############################################################################
+
+device_status_app = FastAPI(
+    title="Device Status",
+    description=(
+        "This API provides the customer with the ability "
+        "to query device: - Roaming Status - Connectivity "
+        "Status Moreover, this API extends the functionality "
+        "by allowing users customers to subscribe to events "
+        "associated with these status queries. # Introduction "
+        "## Roaming Status API consumer is able to verify "
+        "whether a certain user device is in roaming situation "
+        "(or not). This capability is provided in 2 ways: - via "
+        "direct request with the roaming situation in the "
+        "response. - via a subscription request - in this case "
+        "the roaming situation is not in the response but event "
+        "notification is sent back to the event subscriber when "
+        "roaming situation has changed. The verification of the "
+        "roaming situation depends on the network's ability. "
+        "Additionally to the roaming status, when the device is "
+        "in roaming situation, visited country information is "
+        "send back in the response. ## Connectivity Status API "
+        "consumer is able to verify whether a certain user "
+        "device is connected to the network via data- or "
+        "sms-usage. This capability is provided in 2 ways: - "
+        "via direct request with the connectivity situation in "
+        "the response. - via a subscription request - in this "
+        "case the connectivity situation is not in the response "
+        "but event notification is sent back to the event "
+        "subscriber when connectivity situation has changed. ## "
+        "Possible Use-Cases Device status verification could be "
+        "useful in scenario such as (not exhaustive): - For "
+        "regulatory reasons, where a customer may need to be "
+        "within a certain jurisdiction, or out with others, in "
+        "order for transactions to be authorized - For security "
+        "/ fraud reasons, to establish that a customer is "
+        "located where they claim to be - For service delivery "
+        "reasons, to ensure that the customer has access to "
+        "particular service, and will not incur roaming charges "
+        "in accessing them # Relevant terms and definitions * "
+        "**Device**: A device refers to any physical entity "
+        "that can connect to a network and participate in "
+        "network communication. At least one identifier for the "
+        "device (user equipment) out of four options: IPv4 "
+        "address, IPv6 address, Phone number, or Network Access "
+        "Identifier assigned by the mobile network operator for "
+        "the device. * **Roaming** : Roaming status - `true`, "
+        "if device is in roaming situation - `false` else. * "
+        "**Country** : Country code and name - visited country "
+        "information, provided if the device is in roaming "
+        "situation. * **Connectivity** : Connectivity status. - "
+        "`CONNECTED_SMS`, if device is connected to the network "
+        "via SMS usage - `CONNECTED_DATA`, if device is "
+        "connected to the network via data usage' - "
+        "`NOT_CONNECTED`, if device is not connected to the "
+        "network' # API Functionality The API exposes following "
+        "capabilities: ## Device roaming situation The endpoint "
+        "`POST /roaming` allows to get roaming status and "
+        "country information (if device in roaming situation) "
+        "synchronously. ## Device connectivity situation The "
+        "endpoint `POST /connectivity` allows to get current "
+        "connectivity status information synchronously. ## "
+        "Device status subscription These endpoints allow to "
+        "manage event subscription on roaming device status "
+        "event. The CAMARA subscription model is detailed in "
+        "the CAMARA API design guideline document and follows "
+        "CloudEvents specification. It is mandatory in the "
+        "subscription to provide the event `type` subscribed "
+        "are several are managed in this API. Following event "
+        "`type` are managed for this API: - "
+        "`org.camaraproject.device-status.v0.roaming-status` - "
+        "Event triggered when the device switch from roaming ON "
+        "to roaming OFF and conversely - "
+        "`org.camaraproject.device-status.v0.roaming-on` - "
+        "Event triggered when the device switch from roaming "
+        "OFF to roaming ON - `org.camaraproject.device-status.v0.roaming-off`"
+        ": Event triggered when the device switch from roaming ON "
+        "to roaming OFF - "
+        "`org.camaraproject.device-status.v0.roaming-change-country`: "
+        "Event triggered when the device in roaming change "
+        "country code - `org.camaraproject.device-status.v0.connectivity-data`"
+        ": Event triggered when the device is connected to the "
+        "network for Data usage. - "
+        "`org.camaraproject.device-status.v0.connectivity-sms`: "
+        "Event triggered when the device is connected to the "
+        "network for SMS usage - "
+        "`org.camaraproject.device-status.v0.connectivity-disconnected`: "
+        "Event triggered when the device is not connected. "
+        "Note: Additionally to these list, "
+        "`org.camaraproject.device-status.v0.subscription-ends` "
+        "notification `type` is sent when the subscription "
+        "ends. This notification does not require dedicated "
+        "subscription. It is used when the subscription expire "
+        "time (required by the requester) has been reached or "
+        "if the API server has to stop sending notification "
+        "prematurely. ### Notifications callback The "
+        "`notifications` callback describes the format of event "
+        "notifications and expected responses to the messages "
+        "sent when the event occurs. As for subscription, "
+        "detailed description of the event notification is "
+        "provided in the CAMARA API design guideline document. "
+        "**WARNING**: This callback endpoint must be exposed "
+        "and reachable on the listener side under "
+        "`notificationUrl` defined in the `webhook` attribute. "
+        "## Further info and support (FAQs will be added in a "
+        "later version of the documentation) "),
+    version="0.5.0-rc",
+    openapi_url=device_status_app_prefix + open_api_json_path,
+    docs_url=device_status_app_prefix + docs_path,
+    redoc_url=device_status_app_prefix + redoc_path,
+)
+
+device_status_app.include_router(
+    router=DeviceStatusApiRouter,
+    prefix=device_status_app_prefix
 )
 
 

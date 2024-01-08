@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:13:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:31:29
+# @Last Modified time: 2024-01-08 09:47:47
 
 import time
 from datetime import datetime
@@ -65,7 +65,7 @@ class UESIMSwap():
         self.simulation.signal_that_ue_has_stopped()
 
     def stop(self):
-        logging.info(f"Stopping SIM Swwap simulation for UE '{self.ue}'.")
+        logging.info(f"Stopping SIM Swap simulation for UE '{self.ue}'.")
         self.stop_event = True
 
     def advertise_sim_swap(self):
