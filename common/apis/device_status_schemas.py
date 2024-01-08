@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2024-01-08 10:00:17
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-08 10:21:32
+# @Last Modified time: 2024-01-08 10:57:17
 # coding: utf-8
 
 from __future__ import annotations
@@ -451,10 +451,8 @@ class Webhook(BaseModel):
 
 Webhook.model_rebuild()
 SubscriptionInfo.model_rebuild()
-SubscriptionEventType.model_rebuild()
 SubscriptionEnds.model_rebuild()
 SubscriptionDetail.model_rebuild()
-SubscriptionCreationEventType.model_rebuild()
 SubscriptionAsync.model_rebuild()
 RoamingStatus.model_rebuild()
 RoamingStatusResponse.model_rebuild()
@@ -473,7 +471,6 @@ ErrorInfo.model_rebuild()
 Device.model_rebuild()
 DeviceIpv4Addr.model_rebuild()
 CreateSubscription.model_rebuild()
-ConnectivityStatus.model_rebuild()
 ConnectivityStatusResponse.model_rebuild()
 CloudEvent.model_rebuild()
 BasicDeviceEventData.model_rebuild()

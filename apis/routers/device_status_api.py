@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2024-01-08 10:23:10
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-08 10:31:08
+# @Last Modified time: 2024-01-08 10:58:01
 # coding: utf-8
 
 from typing import List  # noqa: F401
@@ -203,7 +203,6 @@ async def create_device_status_subscription(
 )
 async def delete_subscription(
     subscriptionId: str = Path(
-        None,
         description="Subscription identifier that was obtained from the "
         "create event subscription operation"
     ),
@@ -250,7 +249,6 @@ async def delete_subscription(
 )
 async def retrieve_subscription(
     subscriptionId: str = Path(
-        None,
         description="Subscription identifier that was obtained from the "
         "create subscription operation"
     )
