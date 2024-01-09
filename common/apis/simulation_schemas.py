@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-12 11:00:47
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-08 11:04:35
+# @Last Modified time: 2024-01-09 17:14:07
 
 from __future__ import annotations
 from typing import List, Union, Optional
@@ -62,7 +62,7 @@ class SIMSwapSimulation(BaseModel):
 
 class DeviceStatusSimulation(BaseModel):
     simulation_type: str = Field(
-        default=SimulationType.DEVICE_LOCATION.value
+        default=SimulationType.DEVICE_STATUS.value
     )
     devices: List[str]
     initial_device_status: InitialDeviceStatus

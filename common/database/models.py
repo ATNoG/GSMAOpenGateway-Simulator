@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 15:11:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 21:06:26
+# @Last Modified time: 2024-01-08 11:16:55
 import uuid
 from sqlalchemy import (
     Column,
@@ -15,6 +15,7 @@ from sqlalchemy import (
     event
 )
 from common.database.database import Base
+from datetime import datetime
 
 
 class Simulation(Base):
@@ -162,6 +163,28 @@ class SimulationMecPlatform(Base):
     edge_resource_name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
+
+
+class DeviceStatusSimulationData(Base):
+    __tablename__ = "device_status_simulation_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    child_simulation_instance = Column(
+        Integer, ForeignKey("child_simulation_instance.id"), nullable=False,
+        index=True
+    )
+    simulation_instance = Column(
+        Integer, ForeignKey("simulation_instance.id"), nullable=False
+    )
+    ue = Column(
+        Integer, ForeignKey("simulation_ue_instance.id"), nullable=False
+    )
+    connectivity_status = Column(String)
+    roaming = Column(Boolean)
+    country_code = Column(Integer)
+    # Will receive a list of strings parsed to json
+    country_name = Column(String)
+    timestamp = Column(DateTime(timezone=True), default=datetime.now)
 
 
 @event.listens_for(DeviceLocationSubscription, 'before_insert')

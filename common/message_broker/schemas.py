@@ -2,20 +2,12 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 15:40:18
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 10:31:25
-from datetime import datetime
+# @Last Modified time: 2024-01-09 18:29:21
 from pydantic import BaseModel, Field
-from typing import Any, Optional, List, Union
+from typing import Any, Optional, List
 from common.simulation.simulation_types import SimulationType
 from common.simulation.simulation_operations import SimulationOperation
 from common.subscriptions.subscription_types import SubscriptionType
-from common.apis.device_location_schemas import (
-    Circle,
-    Polygon,
-    Webhook,
-    SubscriptionEventType
-)
-from enum import Enum
 
 
 class SimulationAction(BaseModel):
@@ -57,3 +49,13 @@ class Subscription(BaseModel):
     simulation_id: int
     subscription_id: str
     subscription_type: SubscriptionType
+
+
+class DeviceStatusSimulationData(BaseModel):
+    ue: int
+    ue_instance: int
+    connectivity_status: Optional[str] = Field(default=None)
+    roaming: Optional[bool] = Field(default=None)
+    country_code: Optional[int] = Field(default=None)
+    country_name: Optional[List[str]] = Field(default=None)
+    timestamp: Optional[str] = Field(default=None)
