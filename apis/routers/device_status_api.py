@@ -2,11 +2,11 @@
 # @Author: Rafael Direito
 # @Date:   2024-01-08 10:23:10
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 11:19:06
+# @Last Modified time: 2024-01-10 12:16:06
 # coding: utf-8
 
 from typing import List  # noqa: F401
-from fastapi import APIRouter, Body, Path, Depends, Header
+from fastapi import APIRouter, Body, Path, Depends, Header, status
 from sqlalchemy.orm import Session
 import json
 import config # noqa
@@ -24,6 +24,7 @@ from common.apis.device_status_schemas import (
     SubscriptionAsync,
     CreateSubscription
 )
+from fastapi.responses import Response
 
 router = APIRouter()
 
@@ -235,14 +236,45 @@ async def get_roaming_status(
     response_model_by_alias=True,
 )
 async def create_device_status_subscription(
-    create_subscription: CreateSubscription = Body(None, description=""),
-):  # -> SubscriptionInfo:
-    """Create a device status event subscription for a device"""
-    return
+    simulation_id: int = Header(),
+    create_subscription: CreateSubscription = Body(),
+    db: Session = Depends(DBFactory.get_db_session)
+) -> SubscriptionInfo:
+
+    # Get the Simulated UE ID
+    simulated_ue = crud.get_simulated_device_from_root_simulation(
+        db=db,
+        root_simulation_id=simulation_id,
+        device=create_subscription.subscription_detail.device
+    )
+
+    # Store subscription in database
+    created_subscription = crud.create_device_status_subscription(
+        db=db,
+        root_simulation_id=simulation_id,
+        ue_id=simulated_ue.id,
+        subscription=create_subscription
+    )
+
+    # Return
+    subscription_info = SubscriptionInfo(
+        webhook=create_subscription.webhook,
+        subscription_detail=create_subscription.subscription_detail,
+        subscription_expire_time=created_subscription.expire_time,
+        subscription_id=created_subscription.id,
+        starts_at=created_subscription.start_time,
+        expires_at=created_subscription.expire_time
+    )
+
+    return Response(
+        status_code=status.HTTP_201_CREATED,
+        content=subscription_info.model_dump_json(),
+        media_type="application/json"
+    )
 
 
 @router.delete(
-    "/subscriptions/{subscriptionId}",
+    "/subscriptions/{subscription_id}",
     responses={
         204: {
             "description": "event subscription deleted"
@@ -282,17 +314,48 @@ async def create_device_status_subscription(
     response_model_by_alias=True,
 )
 async def delete_subscription(
-    subscriptionId: str = Path(
+    simulation_id: int = Header(),
+    subscription_id: str = Path(
         description="Subscription identifier that was obtained from the "
         "create event subscription operation"
     ),
-):  # -> SubscriptionAsync:
-    """delete a  given event subscription."""
-    return 
+    db: Session = Depends(DBFactory.get_db_session)
+) -> SubscriptionAsync:
+
+    # Get subscription from database
+    subscription_from_db = crud\
+        .get_device_status_subscription_for_root_simulation(
+            db=db,
+            subscription_id=subscription_id,
+            root_simulation_id=simulation_id
+        )
+
+    # If subscription was not found return 404
+    if not subscription_from_db:
+        logging.error(
+            f"Subscription with id {subscription_id} for Simulation" +
+            f"{simulation_id} does not exist."
+        )
+        return DeviceStatusHelper.subscription_not_found()
+
+    # Delete subscription
+    crud.delete_device_status_subscription(
+        db=db,
+        subscription=subscription_from_db
+    )
+
+    subscription_delete_info = SubscriptionAsync(
+        subscription_id=subscription_id
+    )
+    return Response(
+        status_code=status.HTTP_202_ACCEPTED,
+        content=subscription_delete_info.model_dump_json(),
+        media_type="application/json"
+    )
 
 
 @router.get(
-    "/subscriptions/{subscriptionId}",
+    "/subscriptions/{subscription_id}",
     responses={
         200: {
             "model": SubscriptionInfo,
@@ -328,13 +391,38 @@ async def delete_subscription(
     response_model_by_alias=True,
 )
 async def retrieve_subscription(
-    subscriptionId: str = Path(
+    simulation_id: int = Header(),
+    subscription_id: str = Path(
         description="Subscription identifier that was obtained from the "
         "create subscription operation"
-    )
-):  # -> SubscriptionInfo:
-    """retrieve event subscription information for a given subscription."""
-    return 
+    ),
+    db: Session = Depends(DBFactory.get_db_session)
+) -> SubscriptionInfo:
+
+    # Get subscription from database
+    subscription_from_db = crud\
+        .get_device_status_subscription_for_root_simulation(
+            db=db,
+            subscription_id=subscription_id,
+            root_simulation_id=simulation_id
+        )
+
+    # If subscription was not found return 404
+    if not subscription_from_db:
+        logging.error(
+            f"Subscription with id {subscription_id} for Simulation" +
+            f"{simulation_id} does not exist."
+        )
+        return DeviceStatusHelper.subscription_not_found()
+
+    return DeviceStatusHelper\
+        .pydantic_subscription_info_from_db_subscription(
+            db_subscription=subscription_from_db,
+            simulated_device_from_db=crud.get_simulated_device_from_id(
+                db=db,
+                device_id=subscription_from_db.ue
+            )
+        )
 
 
 @router.get(
@@ -370,6 +458,24 @@ async def retrieve_subscription(
     response_model_by_alias=True,
 )
 async def retrieve_subscription_list(
-):  # -> List[SubscriptionInfo]:
-    """Retrieve a list of device status event subscription(s)"""
-    return
+    simulation_id: int = Header(),
+    db: Session = Depends(DBFactory.get_db_session)
+) -> List[SubscriptionInfo]:
+
+    # Parse the DB objects to pydantic ones, to cope with the standard
+    return [
+        DeviceStatusHelper
+        .pydantic_subscription_info_from_db_subscription(
+            db_subscription=subscription_from_db,
+            simulated_device_from_db=crud.get_simulated_device_from_id(
+                db=db,
+                device_id=subscription_from_db.ue
+            )
+        )
+        for subscription_from_db
+        in crud
+        .get_device_status_subscriptions_for_root_simulation(
+            db=db,
+            root_simulation_id=simulation_id
+        )
+    ]

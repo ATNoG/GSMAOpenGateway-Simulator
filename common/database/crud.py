@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 11:02:52
+# @Last Modified time: 2024-01-10 12:04:28
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -10,7 +10,10 @@ from common.simulation.simulation_types import SimulationType
 import logging
 import json
 from common.apis.device_location_schemas import (
-    CreateSubscription
+    CreateSubscription as DeviceLocationCreateSubscription
+)
+from common.apis.device_status_schemas import (
+    CreateSubscription as DeviceStatusCreateSubscription
 )
 from datetime import datetime
 import copy
@@ -862,7 +865,7 @@ def get_device_location_simulation_data(
 
 def create_device_location_subscription(
     db: Session, root_simulation_id: int, ue_id: int,
-    subscription: CreateSubscription
+    subscription: DeviceLocationCreateSubscription
 ):
     # Create a new Device Location Subscription
     new_device_location_subscription = models.DeviceLocationSubscription(
@@ -923,14 +926,6 @@ def delete_location_subscription(
     db.commit()
 
 
-def get_simulated_device_id_from_simulated_device_instance(
-    db: Session, simulated_device_instance_id: int
-):
-    return db.query(models.SimulationUEInstance).filter(
-        models.SimulationUEInstance.id == simulated_device_instance_id,
-    ).first().simulation_ue
-
-
 def create_device_location_subscription_notification(
     db: Session, subscription_id: str, sucess: bool = None,
     error: str = None
@@ -970,6 +965,14 @@ def update_device_location_subscription_notification(
     db.refresh(notification)
 
     return notification
+
+
+def get_simulated_device_id_from_simulated_device_instance(
+    db: Session, simulated_device_instance_id: int
+):
+    return db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.id == simulated_device_instance_id,
+    ).first().simulation_ue
 
 
 def get_all_child_simulation_instances_running(db):
@@ -1091,3 +1094,104 @@ def get_last_device_status_entry(
         ).order_by(
             models.DeviceStatusSimulationData.id.desc()
         ).first()
+
+
+def create_device_status_subscription(
+    db: Session, root_simulation_id: int, ue_id: int,
+    subscription: DeviceStatusCreateSubscription
+):
+    # Create a new Device Location Subscription
+    new_device_status_subscription = models.DeviceStatusSubscription(
+        root_simulation=root_simulation_id,
+        ue=ue_id,
+        subscription_type=subscription.subscription_detail.type.value,
+        webhook_url=subscription.webhook.notification_url,
+        webhook_auth_token=subscription.webhook.notification_auth_token,
+        start_time=datetime.utcnow(),
+        expire_time=subscription.subscription_expire_time
+    )
+
+    db.add(new_device_status_subscription)
+    db.commit()
+    db.refresh(new_device_status_subscription)
+
+    logging.info(
+        "Created device status subscription with id" +
+        f"{new_device_status_subscription.id} (Root Simulation " +
+        f"{root_simulation_id})."
+    )
+    return new_device_status_subscription
+
+
+def get_device_status_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_active_device_status_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.expire_time > datetime.utcnow(),
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_device_status_subscription_for_root_simulation(
+    db: Session, root_simulation_id: int, subscription_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.id == subscription_id,
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).first()
+
+
+def delete_device_status_subscription(
+    db: Session, subscription: models.DeviceStatusSubscription
+):
+    db.delete(subscription)
+    db.commit()
+
+
+def create_device_status_subscription_notification(
+    db: Session, subscription_id: str, sucess: bool = None,
+    error: str = None
+):
+    new_notification = models.DeviceStatusSubscriptionNotification(
+        subscription_id=subscription_id,
+    )
+
+    if sucess:
+        new_notification.sucess = sucess
+    if error:
+        new_notification.error = error
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification
+
+
+def update_device_status_subscription_notification(
+    db: Session, notification_id: int, sucess: bool = None,
+    error: str = None
+):
+    notification = db.query(
+        models.DeviceStatusSubscriptionNotification
+    ).filter(
+        models.DeviceStatusSubscriptionNotification.id == notification_id,
+    ).first()
+
+    if sucess:
+        notification.sucess = sucess
+    if error:
+        notification.error = error
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification

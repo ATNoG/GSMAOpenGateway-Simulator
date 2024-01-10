@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 20:45:44
+# @Last Modified time: 2024-01-10 11:45:06
 import sys
 import json
 import logging
@@ -30,6 +30,7 @@ def main():
         if "scope" in message and message['scope'] == "SIMULATION_DATA":
             simulation_data = MessageBrokerSchemas\
                 .SimulationData(**message)
+
             if simulation_data.simulation_type == SimulationType\
                     .DEVICE_LOCATION:
                 geofencing_subscriptions_manager.handle_ue_location_message(
