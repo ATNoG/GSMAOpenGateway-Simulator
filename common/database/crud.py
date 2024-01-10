@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-09 17:21:50
+# @Last Modified time: 2024-01-10 11:02:52
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -1077,3 +1077,17 @@ def create_device_status_simulation_data_entry(
     )
 
     return new_device_status_simulation_entry
+
+
+def get_last_device_status_entry(
+    db: Session, simulation_instance, ue_id
+):
+    # Query the database to find the most recent entry for the given parameters
+    return db.query(models.DeviceStatusSimulationData)\
+        .filter(
+            models.DeviceStatusSimulationData.simulation_instance ==
+            simulation_instance,
+            models.DeviceStatusSimulationData.ue == ue_id
+        ).order_by(
+            models.DeviceStatusSimulationData.id.desc()
+        ).first()

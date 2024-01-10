@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:13:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-09 18:30:27
+# @Last Modified time: 2024-01-09 19:50:24
 
 import time
 from datetime import datetime
@@ -72,11 +72,6 @@ class UEDeviceStatus():
         self.stop_event = True
 
     def advertise_device_status(self, status):
-        # Get current UTC time
-        current_time = datetime.utcnow()
-
-        # Format the time as a string
-        formatted_time = current_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         # Build the payload
         simulation_data = SimulationSchemas.SimulationData(
@@ -91,7 +86,7 @@ class UEDeviceStatus():
                 roaming=status.get("roaming"),
                 country_code=status.get("country_code"),
                 country_name=status.get("country_name"),
-                timestamp=formatted_time
+                timestamp=datetime.utcnow()
             )
         )
 
@@ -103,11 +98,11 @@ class UEDeviceStatus():
             f"{self.simulation.simulation_instance_id}, Child Simulation" +
             f" Instance {self.simulation.child_simulation_id}). " +
             "Current Device Status: (connectivity_status=" +
-            f"{status.get('connectivity_status')}, " +
-            f"roaming={status.get('roaming')}, " +
-            f"country_code={status.get('country_code')}, " +
-            f"country_name={status.get('country_name')}, " +
-            f"timestamp={formatted_time})"
+            f"{simulation_data.data.connectivity_status}, " +
+            f"roaming={simulation_data.data.roaming}, " +
+            f"country_code={simulation_data.data.country_code}, " +
+            f"country_name={simulation_data.data.country_name}, " +
+            f"timestamp={simulation_data.data.timestamp})"
         )
 
         # Send Payload

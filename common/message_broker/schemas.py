@@ -2,12 +2,13 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 15:40:18
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-09 18:29:21
+# @Last Modified time: 2024-01-09 19:49:13
 from pydantic import BaseModel, Field
 from typing import Any, Optional, List
 from common.simulation.simulation_types import SimulationType
 from common.simulation.simulation_operations import SimulationOperation
 from common.subscriptions.subscription_types import SubscriptionType
+from datetime import datetime
 
 
 class SimulationAction(BaseModel):
@@ -58,4 +59,4 @@ class DeviceStatusSimulationData(BaseModel):
     roaming: Optional[bool] = Field(default=None)
     country_code: Optional[int] = Field(default=None)
     country_name: Optional[List[str]] = Field(default=None)
-    timestamp: Optional[str] = Field(default=None)
+    timestamp: Optional[datetime] = Field(default=None)
