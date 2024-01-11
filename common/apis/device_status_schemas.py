@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2024-01-08 10:00:17
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-08 10:57:17
+# @Last Modified time: 2024-01-11 19:22:48
 # coding: utf-8
 
 from __future__ import annotations
@@ -75,14 +75,14 @@ class CreateSubscription(BaseModel):
 class DeviceIpv4Addr(BaseModel):
 
     public_address: Optional[str] = Field(
-        alias="publicAddress", default=None
+        alias="publicAddress", default=None, example="10.93.125.84"
     )
     private_address: Optional[str] = Field(
-        alias="privateAddress", default=None
-    )
+        alias="privateAddress", default=None, example="10.10.10.10"
+        )
     public_port: Optional[int] = Field(
-        alias="publicPort", default=None
-    )
+        alias="publicPort", default=None, example=56795
+        )
 
     @validator("public_port")
     def public_port_max(cls, value):
@@ -109,7 +109,6 @@ class Device(BaseModel):
     )
     ipv4_address: Optional[DeviceIpv4Addr] = Field(
         alias="ipv4Address", default=None,
-        example="10.10.10.84"
     )
     ipv6_address: Optional[str] = Field(
         alias="ipv6Address", default=None,
@@ -368,7 +367,7 @@ class RoamingStatus(BaseModel):
 
 class SubscriptionAsync(BaseModel):
     subscription_id: Optional[str] = Field(
-        alias="subscriptionId", default=None
+        alias="subscriptionId", default=None, example="qs15-h556-rt89-1298"
     )
 
     model_config = ConfigDict(
@@ -429,7 +428,9 @@ class SubscriptionInfo(BaseModel):
         alias="subscriptionExpireTime", default=None
     )
     webhook: Webhook = Field(alias="webhook")
-    subscription_id: str = Field(alias="subscriptionId")
+    subscription_id: str = Field(
+        alias="subscriptionId", example="qs15-h556-rt89-1298"
+    )
     starts_at: Optional[datetime] = Field(alias="startsAt", default=None)
     expires_at: Optional[datetime] = Field(alias="expiresAt", default=None)
 
@@ -439,9 +440,12 @@ class SubscriptionInfo(BaseModel):
 
 
 class Webhook(BaseModel):
-    notification_url: str = Field(alias="notificationUrl")
+    notification_url: str = Field(
+        alias="notificationUrl", example="https://application-server.com"
+    )
     notification_auth_token: Optional[str] = Field(
-        alias="notificationAuthToken", default=None
+        alias="notificationAuthToken", default=None,
+        example="c8974e592c2fa383d4a3960714"
     )
 
     model_config = ConfigDict(

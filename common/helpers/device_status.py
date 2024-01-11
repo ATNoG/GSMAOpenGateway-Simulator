@@ -2,10 +2,9 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-14 11:14:04
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 12:12:42
+# @Last Modified time: 2024-01-11 19:24:42
 from fastapi.responses import JSONResponse
 import config # noqa
-import json
 from common.apis.sim_swap_schemas import ErrorInfo
 from common.database import models
 from common.apis.device_status_schemas import (

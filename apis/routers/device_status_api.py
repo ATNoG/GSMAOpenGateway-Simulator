@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2024-01-08 10:23:10
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 12:16:06
+# @Last Modified time: 2024-01-11 19:24:36
 # coding: utf-8
 
 from typing import List  # noqa: F401
@@ -16,13 +16,15 @@ from common.database import crud
 from common.helpers import device_status as DeviceStatusHelper
 from common.apis.device_status_schemas import (
     ConnectivityStatusResponse,
-    ErrorInfo,
     RequestConnectivityStatus,
     RoamingStatusResponse,
     RequestRoamingStatus,
     SubscriptionInfo,
     SubscriptionAsync,
     CreateSubscription
+)
+from helpers.responses_documentation.device_status_api import (
+    DeviceStatusResponses
 )
 from fastapi.responses import Response
 
@@ -31,40 +33,11 @@ router = APIRouter()
 
 @router.post(
     "/connectivity",
-    responses={
-        200: {
-            "model": ConnectivityStatusResponse,
-            "description": "Contains information about current "
-            "connectivity status"
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Problem with the client request"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        404: {
-            "model": ErrorInfo,
-            "description": "Resource Not Found"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.POST_CONNECTIVITY,
     tags=["Device connectivity status"],
     summary="Get the current connectivity status information",
     response_model_by_alias=True,
+    status_code=201
 )
 async def get_connectivity_status(
     simulation_id: int = Header(),
@@ -115,36 +88,7 @@ async def get_connectivity_status(
 
 @router.post(
     "/roaming",
-    responses={
-        200: {
-            "model": RoamingStatusResponse,
-            "description": "Contains information about current roaming status"
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Problem with the client request"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        404: {
-            "model": ErrorInfo,
-            "description": "Resource Not Found"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.POST_ROAMING,
     tags=["Device roaming status"],
     summary="Get the current roaming status and the country information",
     response_model_by_alias=True,
@@ -196,50 +140,17 @@ async def get_roaming_status(
 
 @router.post(
     "/subscriptions",
-    responses={
-        201: {
-            "model": SubscriptionInfo,
-            "description": "Created"
-        },
-        202: {
-            "model": SubscriptionAsync,
-            "description": "Request accepted to be processed. It applies "
-            "for async creation process."
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Problem with the client request"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        409: {
-            "model": ErrorInfo,
-            "description": "Conflict"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.POST_SUBSCRIPTION,
     tags=["Device status subscription"],
     summary="Create a device status event subscription for a device",
     response_model_by_alias=True,
+    status_code=201
 )
 async def create_device_status_subscription(
     simulation_id: int = Header(),
     create_subscription: CreateSubscription = Body(),
     db: Session = Depends(DBFactory.get_db_session)
-) -> SubscriptionInfo:
+):
 
     # Get the Simulated UE ID
     simulated_ue = crud.get_simulated_device_from_root_simulation(
@@ -275,43 +186,11 @@ async def create_device_status_subscription(
 
 @router.delete(
     "/subscriptions/{subscription_id}",
-    responses={
-        204: {
-            "description": "event subscription deleted"
-        },
-        202: {
-            "model": SubscriptionAsync,
-            "description": "Request accepted to be processed. It applies "
-            "for async deletion process."
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Invalid input"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        404: {
-            "model": ErrorInfo,
-            "description": "Resource Not Found"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.DELETE_SUBSCRIPTION,
     tags=["Device status subscription"],
     summary="Delete a device status event subscription for a device",
     response_model_by_alias=True,
+    status_code=202
 )
 async def delete_subscription(
     simulation_id: int = Header(),
@@ -320,7 +199,7 @@ async def delete_subscription(
         "create event subscription operation"
     ),
     db: Session = Depends(DBFactory.get_db_session)
-) -> SubscriptionAsync:
+):
 
     # Get subscription from database
     subscription_from_db = crud\
@@ -356,36 +235,7 @@ async def delete_subscription(
 
 @router.get(
     "/subscriptions/{subscription_id}",
-    responses={
-        200: {
-            "model": SubscriptionInfo,
-            "description": "OK"
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Invalid input"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        404: {
-            "model": ErrorInfo,
-            "description": "Resource Not Found"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.GET_SUBSCRIPTION,
     tags=["Device status subscription"],
     summary="Retrieve a device status event subscription for a device",
     response_model_by_alias=True,
@@ -427,32 +277,7 @@ async def retrieve_subscription(
 
 @router.get(
     "/subscriptions",
-    responses={
-        200: {
-            "model": List[SubscriptionInfo],
-            "description": "List of event subscription details"
-        },
-        400: {
-            "model": ErrorInfo,
-            "description": "Problem with the client request"
-        },
-        401: {
-            "model": ErrorInfo,
-            "description": "Authentication problem with the client request"
-        },
-        403: {
-            "model": ErrorInfo,
-            "description": "Client does not have sufficient permission"
-        },
-        500: {
-            "model": ErrorInfo,
-            "description": "Server error"
-        },
-        503: {
-            "model": ErrorInfo,
-            "description": "Service unavailable. Typically the server is down."
-        },
-    },
+    responses=DeviceStatusResponses.GET_SUBSCRIPTIONS,
     tags=["Device status subscription"],
     summary="Retrieve a list of device status event subscription",
     response_model_by_alias=True,
