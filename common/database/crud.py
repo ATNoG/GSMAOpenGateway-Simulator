@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-30 17:43:11
+# @Last Modified time: 2024-01-11 11:32:57
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -10,7 +10,10 @@ from common.simulation.simulation_types import SimulationType
 import logging
 import json
 from common.apis.device_location_schemas import (
-    CreateSubscription
+    CreateSubscription as DeviceLocationCreateSubscription
+)
+from common.apis.device_status_schemas import (
+    CreateSubscription as DeviceStatusCreateSubscription
 )
 from datetime import datetime
 import copy
@@ -418,6 +421,9 @@ def create_simulation_entities_required_for_starting_simulation(
         "child_simulations": []
     }
 
+    # Create dict to map the devices
+    devices_mapping = {}
+
     # Get the payload
     simulation_payload = json.loads(json.loads(simulation.payload))
 
@@ -486,11 +492,15 @@ def create_simulation_entities_required_for_starting_simulation(
                 new_simulation_ue_instance
             )
 
+            devices_mapping[device["id"]] = new_simulation_ue_instance
+
         # Process the child simulations
         for child_simulation in simulation_payload["child_simulations"]:
 
             if child_simulation["simulation_type"] == \
                     SimulationType.DEVICE_LOCATION.value:
+
+                initial_location = child_simulation["itinerary"][0]
 
                 for device in child_simulation["devices"]:
 
@@ -514,6 +524,33 @@ def create_simulation_entities_required_for_starting_simulation(
                         "DEVICE_LOCATION) with id " +
                         f"{new_child_simulation_instance.id} for Root " +
                         f"Simulation with id {simulation.id}"
+                    )
+
+                    # Add the initial location
+                    simulation_entry = models\
+                        .DeviceLocationSimulationData(
+                            child_simulation_instance= # noqa
+                            new_child_simulation_instance.id,
+                            simulation_instance=new_simulation_instance.id,
+                            ue=devices_mapping[device].id,
+                            latitude=initial_location["latitude"],
+                            longitude=initial_location["longitude"],
+                            timestamp=datetime.utcnow(),
+                        )
+
+                    db.add(simulation_entry)
+                    db.flush()
+
+                    logging.info(
+                        "Created new device location simulation data entry " +
+                        "for Simulation Instance " +
+                        f"{simulation_entry.simulation_instance}, "
+                        "Child Simulation Instance " +
+                        f"{simulation_entry.child_simulation_instance}: " +
+                        f"(ue_id: {simulation_entry.ue}, " +
+                        f"latitude: {simulation_entry.latitude}, " +
+                        f"longitude: {simulation_entry.longitude}, " +
+                        f"timestamp: {simulation_entry.timestamp})"
                     )
 
                     child_simulation["devices"] = [device]
@@ -551,6 +588,115 @@ def create_simulation_entities_required_for_starting_simulation(
                         f"Root Simulation with id {simulation.id}"
                     )
 
+                    # Create new device location entry in DB
+                    sim_swap_entry = models\
+                        .SimSwapSimulationData(
+                            child_simulation_instance= # noqa
+                            new_child_simulation_instance.id,
+                            simulation_instance=new_simulation_instance.id,
+                            ue=devices_mapping[device].id,
+                            new_msisdn="initial_msisdn",
+                            timestamp=datetime.utcnow()
+                        )
+
+                    db.add(sim_swap_entry)
+                    db.flush()
+
+                    logging.info(
+                        "Created new initial Swap simulation data entry for " +
+                        f"Simulation Instance "
+                        f"{sim_swap_entry.simulation_instance}, " +
+                        f"Child Simulation Instance "
+                        f"{sim_swap_entry.child_simulation_instance}: " +
+                        f"(ue_id: {sim_swap_entry.ue}, " +
+                        f"new_new_msisdn: {sim_swap_entry.new_msisdn}, " +
+                        f"timestamp: {sim_swap_entry.timestamp})"
+                    )
+
+                    child_simulation["devices"] = [device]
+                    created_entities["child_simulations"].append(
+                        (
+                            copy.deepcopy(new_child_simulation_instance),
+                            copy.deepcopy(child_simulation)
+                        )
+                    )
+
+            elif child_simulation["simulation_type"] == \
+                    SimulationType.DEVICE_STATUS.value:
+
+                initial_status = child_simulation["initial_device_status"]
+
+                for device in child_simulation["devices"]:
+                    # Get Max duration
+                    duration = 0
+                    for device_status_update in child_simulation.get(
+                        "device_status_updates"
+                    ):
+                        if device_status_update["on_timestamp"] > duration:
+                            duration = int(
+                                device_status_update["on_timestamp"]
+                            )
+
+                    # Create a new Child Simulation instance
+                    new_child_simulation_instance = models\
+                        .ChildSimulationInstance(
+                            simulation_instance=new_simulation_instance.id,
+                            simulation_type=child_simulation.get(
+                                "simulation_type"
+                            ),
+                            duration_seconds=duration
+                        )
+
+                    db.add(new_child_simulation_instance)
+                    db.flush()
+
+                    logging.info(
+                        "Created Child Simulation instance " +
+                        "(Type: DEVICE_STATUS) with id " +
+                        f"{new_child_simulation_instance.id} for "
+                        f"Root Simulation with id {simulation.id}"
+                    )
+
+                    # Create new device status entry in DB
+                    device_status_entry = models\
+                        .DeviceStatusSimulationData(
+                            child_simulation_instance= # noqa
+                            new_child_simulation_instance.id,
+                            simulation_instance=new_simulation_instance.id,
+                            ue=devices_mapping[device].id,
+                            connectivity_status=initial_status[
+                                "connectivity_status"
+                            ],
+                            roaming=initial_status[
+                                "roaming"
+                            ],
+                            country_code=initial_status[
+                                "country_code"
+                            ],
+                            country_name=json.dumps(
+                                initial_status["country_name"]
+                            )
+                        )
+
+                    db.add(device_status_entry)
+                    db.flush()
+
+                    logging.info(
+                        "Created new initial Device Status data entry for " +
+                        f"Simulation Instance "
+                        f"{device_status_entry.simulation_instance}, " +
+                        f"Child Simulation Instance "
+                        f"{device_status_entry.child_simulation_instance}: " +
+                        f"(ue_id: {device_status_entry.ue}, " +
+                        "new_connectivity_status: " +
+                        f"{device_status_entry.connectivity_status}, " +
+                        f"roaming: {device_status_entry.roaming}, " +
+                        "country_code: " +
+                        f"{device_status_entry.country_code}, " +
+                        "country_name: " +
+                        f"{device_status_entry.country_name})"
+                    )
+
                     child_simulation["devices"] = [device]
                     created_entities["child_simulations"].append(
                         (
@@ -565,7 +711,7 @@ def create_simulation_entities_required_for_starting_simulation(
 
     except Exception as e:
         logging.error(
-            "Failed to create simulation entities required for starting the" +
+            "Failed to create simulation entities required for starting the " +
             f"simulation {simulation.id}. Reason: {e}.\n Rolling back..."
         )
         db.rollback()
@@ -626,6 +772,36 @@ def get_simulated_device_instance_from_root_simulation(
         simulation_ue.ipv4_address_private_address
     ue.ipv4_address_public_port = simulation_ue.ipv4_address_public_port
     ue.ipv6_address = simulation_ue.ipv6_address
+
+    return ue
+
+
+def get_device_instance_based_on_simulated_ue(
+    db: Session, root_simulation_id, simulated_ue_id
+):
+    simulation_instance = get_last_simulation_instance_from_root_simulation(
+        db=db,
+        root_simulation_id=root_simulation_id
+    )
+
+    simulated_ue = db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        models.SimulationUE.id == simulated_ue_id
+    ).first()
+
+    ue = db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.simulation_instance ==
+        simulation_instance.id,
+        models.SimulationUEInstance.simulation_ue == simulated_ue.id
+    ).first()
+
+    ue.phone_number = simulated_ue.phone_number
+    ue.network_access_identifier = simulated_ue.network_access_identifier
+    ue.ipv4_address_public_address = simulated_ue.ipv4_address_public_address
+    ue.ipv4_address_private_address = \
+        simulated_ue.ipv4_address_private_address
+    ue.ipv4_address_public_port = simulated_ue.ipv4_address_public_port
+    ue.ipv6_address = simulated_ue.ipv6_address
 
     return ue
 
@@ -719,7 +895,7 @@ def get_device_location_simulation_data(
 
 def create_device_location_subscription(
     db: Session, root_simulation_id: int, ue_id: int,
-    subscription: CreateSubscription
+    subscription: DeviceLocationCreateSubscription
 ):
     # Create a new Device Location Subscription
     new_device_location_subscription = models.DeviceLocationSubscription(
@@ -780,14 +956,6 @@ def delete_location_subscription(
     db.commit()
 
 
-def get_simulated_device_id_from_simulated_device_instance(
-    db: Session, simulated_device_instance_id: int
-):
-    return db.query(models.SimulationUEInstance).filter(
-        models.SimulationUEInstance.id == simulated_device_instance_id,
-    ).first().simulation_ue
-
-
 def create_device_location_subscription_notification(
     db: Session, subscription_id: str, sucess: bool = None,
     error: str = None
@@ -827,6 +995,14 @@ def update_device_location_subscription_notification(
     db.refresh(notification)
 
     return notification
+
+
+def get_simulated_device_id_from_simulated_device_instance(
+    db: Session, simulated_device_instance_id: int
+):
+    return db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.id == simulated_device_instance_id,
+    ).first().simulation_ue
 
 
 def get_all_child_simulation_instances_running(db):
@@ -894,3 +1070,158 @@ def get_mec_platforms_for_root_simulation(
     return db.query(models.SimulationMecPlatform).filter(
         models.SimulationMecPlatform.root_simulation == root_simulation_id
     ).all()
+
+
+def create_device_status_simulation_data_entry(
+    db: Session, child_simulation_instance, simulation_instance, ue_id,
+    connectivity_status, roaming, country_code, country_name
+):
+    if not country_name:
+        country_name = []
+
+    # Create new device status entry in DB
+    new_device_status_simulation_entry = models\
+        .DeviceStatusSimulationData(
+            child_simulation_instance=child_simulation_instance,
+            simulation_instance=simulation_instance,
+            ue=ue_id,
+            connectivity_status=connectivity_status,
+            roaming=roaming,
+            country_code=country_code,
+            country_name=json.dumps(country_name)
+        )
+
+    db.add(new_device_status_simulation_entry)
+    db.commit()
+    db.refresh(new_device_status_simulation_entry)
+
+    logging.info(
+        "Created new Device Status simulation data entry for " +
+        f"Simulation Instance {simulation_instance}, " +
+        f"Child Simulation Instance {child_simulation_instance}: " +
+        f"(ue_id: {new_device_status_simulation_entry.ue}, " +
+        "new_connectivity_status: " +
+        f"{new_device_status_simulation_entry.connectivity_status}, " +
+        f"roaming: {new_device_status_simulation_entry.roaming}, " +
+        "country_code: " +
+        f"{new_device_status_simulation_entry.country_code}, " +
+        "country_name: " +
+        f"{new_device_status_simulation_entry.country_name})"
+    )
+
+    return new_device_status_simulation_entry
+
+
+def get_last_device_status_entry(
+    db: Session, simulation_instance, ue_id
+):
+    # Query the database to find the most recent entry for the given parameters
+    return db.query(models.DeviceStatusSimulationData)\
+        .filter(
+            models.DeviceStatusSimulationData.simulation_instance ==
+            simulation_instance,
+            models.DeviceStatusSimulationData.ue == ue_id
+        ).order_by(
+            models.DeviceStatusSimulationData.id.desc()
+        ).first()
+
+
+def create_device_status_subscription(
+    db: Session, root_simulation_id: int, ue_id: int,
+    subscription: DeviceStatusCreateSubscription
+):
+    # Create a new Device Location Subscription
+    new_device_status_subscription = models.DeviceStatusSubscription(
+        root_simulation=root_simulation_id,
+        ue=ue_id,
+        subscription_type=subscription.subscription_detail.type.value,
+        webhook_url=subscription.webhook.notification_url,
+        webhook_auth_token=subscription.webhook.notification_auth_token,
+        start_time=datetime.utcnow(),
+        expire_time=subscription.subscription_expire_time
+    )
+
+    db.add(new_device_status_subscription)
+    db.commit()
+    db.refresh(new_device_status_subscription)
+
+    logging.info(
+        "Created device status subscription with id" +
+        f"{new_device_status_subscription.id} (Root Simulation " +
+        f"{root_simulation_id})."
+    )
+    return new_device_status_subscription
+
+
+def get_device_status_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_active_device_status_subscriptions_for_root_simulation(
+    db: Session, root_simulation_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.expire_time > datetime.utcnow(),
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).all()
+
+
+def get_device_status_subscription_for_root_simulation(
+    db: Session, root_simulation_id: int, subscription_id: int
+):
+    return db.query(models.DeviceStatusSubscription).filter(
+        models.DeviceStatusSubscription.id == subscription_id,
+        models.DeviceStatusSubscription.root_simulation == root_simulation_id
+    ).first()
+
+
+def delete_device_status_subscription(
+    db: Session, subscription: models.DeviceStatusSubscription
+):
+    db.delete(subscription)
+    db.commit()
+
+
+def create_device_status_subscription_notification(
+    db: Session, subscription_id: str, sucess: bool = None,
+    error: str = None
+):
+    new_notification = models.DeviceStatusSubscriptionNotification(
+        subscription_id=subscription_id,
+    )
+
+    if sucess:
+        new_notification.sucess = sucess
+    if error:
+        new_notification.error = error
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification
+
+
+def update_device_status_subscription_notification(
+    db: Session, notification_id: int, sucess: bool = None,
+    error: str = None
+):
+    notification = db.query(
+        models.DeviceStatusSubscriptionNotification
+    ).filter(
+        models.DeviceStatusSubscriptionNotification.id == notification_id,
+    ).first()
+
+    if sucess:
+        notification.sucess = sucess
+    if error:
+        notification.error = error
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification

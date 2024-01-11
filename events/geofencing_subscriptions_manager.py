@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 15:22:15
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 21:42:54
+# @Last Modified time: 2024-01-11 14:29:14
 import config # noqa
 import logging
 from common.message_broker.schemas import SimulationData, SubscriptionType
@@ -25,6 +25,21 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
         super().__init__()
 
     def handle_ue_location_message(self, simulation_data: SimulationData):
+
+        # CLEANUP
+        if "stop" in simulation_data.data:
+            i = len(self.active_subscriptions) - 1
+            while i >= 0:
+                if self.active_subscriptions[i].simulation_id == \
+                        simulation_data.simulation_id:
+                    logging.info(
+                        "Will delete Simulation: " +
+                        f"({self.active_subscriptions[i]})."
+                    )
+                    del self.active_subscriptions[i]
+
+                i -= 1
+            return
 
         for subscription in self.get_subscriptions(
             simulation_data.simulation_id
@@ -119,7 +134,9 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
         # Here we assume that the UE last position was uknown
         if subscription.ue_inside_geofence is None:
             subscription.ue_inside_geofence = ue_location == "IN"
-            self.notifications.send_and_record_notification(subscription)
+            self.notifications.send_and_record_location_notification(
+                subscription
+            )
 
         # subscription.ue_inside_geofence points to the last relative position
         # of the UE in regard to the geofence
@@ -128,7 +145,9 @@ class GeofencingSubscriptionsManager(SubscriptionsManager):
             or
             (ue_location == "OUT" and subscription.ue_inside_geofence)
         ):
-            self.notifications.send_and_record_notification(subscription)
+            self.notifications.send_and_record_location_notification(
+                subscription
+            )
 
     def parse_ue_and_subscription_area_to_shapely_polygons(
         self, simulation_data: SimulationData,

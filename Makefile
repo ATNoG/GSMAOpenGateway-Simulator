@@ -72,3 +72,10 @@ run_simple_edge_discovery_api:
 	cd apis && \
     echo -e "\nLaunching FastAPI server for the Simple Edge Discovery API...\n" && \
     uvicorn main:simple_edge_discovery_app --reload --port 8005
+
+# Device Status API
+run_device_status_api:
+	source venv/bin/activate && \
+	cd apis && \
+    echo -e "\nLaunching FastAPI server for the Device Status API...\n" && \
+    uvicorn main:device_status_app --reload --port 8006

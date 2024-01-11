@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:11:26
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-22 20:50:13
+# @Last Modified time: 2024-01-11 14:37:36
 import networkx
 import osmnx as ox
 import threading
@@ -11,7 +11,10 @@ from aux.ue_movement import UEMovement
 from base_simulation import Simulation
 from common.simulation.simulation_types import SimulationType
 from common.message_broker import connections_factory as PikaFactory
+from common.message_broker import schemas as SimulationSchemas
 from common.database import crud
+from common.message_broker.topics import Topics
+
 ox.config(use_cache=True, log_console=True)
 
 
@@ -83,6 +86,9 @@ class DeviceLocationSimulation(Simulation):
     def signal_that_ue_has_stopped(self):
         self.moving_ues_count -= 1
         if self.moving_ues_count == 0:
+            # Inform Events Module that the Simulation has ended
+            self.inform_events_module_that_simulation_has_ended()
+            # Signal that the simulation has ended
             self.signal_that_simulation_ended()
 
     def start_simulation(self):
@@ -137,5 +143,36 @@ class DeviceLocationSimulation(Simulation):
         # Wait for all threads to finish
         for thread in self.ue_threads:
             thread.join()
+
+        # Inform Events Module that the Simulation has ended
+        self.inform_events_module_that_simulation_has_ended()
+
         # Signal that the simulation has ended
         self.signal_that_simulation_ended()
+
+    def inform_events_module_that_simulation_has_ended(self):
+        simulation_data = SimulationSchemas.SimulationData(
+            simulation_id=self.simulation_id,
+            simulation_instance_id=self.simulation_instance_id,
+            child_simulation_instance_id=self.child_simulation_id,
+            simulation_type=self.simulation_type,
+            data=SimulationSchemas.DeviceLocationSimulationData(
+                stop=True,
+                ue=-1,
+                ue_instance=-1,
+                latitude=-1,
+                longitude=-1,
+                timestamp=""
+            )
+        )
+
+        _, channel = PikaFactory\
+            .get_new_pika_connection_and_channel()
+
+        channel.basic_publish(
+            exchange='',
+            routing_key=Topics.EVENTS.value,
+            body=simulation_data.model_dump_json()
+        )
+
+        channel.close()

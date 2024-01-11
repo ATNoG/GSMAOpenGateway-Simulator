@@ -2,13 +2,14 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-27 16:08:33
+# @Last Modified time: 2024-01-10 10:48:19
 import sys
 import json
 import logging
 import config # noqa
 from device_location_handler import DeviceLocationHandler
 from sim_swap_handler import SIMSwapHandler
+from device_status_handler import DeviceStatusHandler
 from common.message_broker import connections_factory as PikaFactory
 from common.simulation.simulation_types import SimulationType
 from common.message_broker.topics import Topics
@@ -34,6 +35,9 @@ def main():
 
         elif simulation_data.simulation_type == SimulationType.SIM_SWAP:
             SIMSwapHandler.process_message(simulation_data, db)
+
+        elif simulation_data.simulation_type == SimulationType.DEVICE_STATUS:
+            DeviceStatusHandler.process_message(simulation_data, db)
 
     # Start consuming
     channel.basic_consume(
