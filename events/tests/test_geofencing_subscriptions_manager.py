@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-19 19:04:36
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2023-12-23 21:30:34
+# @Last Modified time: 2024-01-11 11:46:33
 import pytest
 from unittest.mock import call
 import config # noqa
@@ -173,7 +173,8 @@ def test_if_area_related_events_are_being_triggered(mocker):
 
     # Set mocks
     notifications_mock = mocker.patch(
-        target="notifications.Notifications.send_and_record_notification",
+        target="notifications.Notifications.send_and_record_location_" +
+        "notification",
         return_value=True
     )
 
@@ -241,7 +242,7 @@ def test_if_area_related_events_are_being_triggered(mocker):
             ),
             CloudEvent(
                 id="10",
-                source=Constants.NOTIFICATION_SOURCE,
+                source=Constants.GEONFENCING_NOTIFICATION_SOURCE,
                 type=SubscriptionEventType.AREA_ENTERED,
                 specversion="1.0",
                 datacontenttype="application/json",
@@ -334,7 +335,7 @@ def test_if_area_related_events_notifications(
     )
 
     notifications = Notifications(None)
-    ret = notifications.send_and_record_notification(subscription)
+    ret = notifications.send_and_record_location_notification(subscription)
 
     # The times will be defined according to the object's time of creation
     # As such, one should avoid to compare these times on this test. Thus,

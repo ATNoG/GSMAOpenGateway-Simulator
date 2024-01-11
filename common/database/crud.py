@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-08 17:51:02
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 12:04:28
+# @Last Modified time: 2024-01-11 11:32:57
 
 from sqlalchemy.orm import Session
 from common.database import models
@@ -772,6 +772,36 @@ def get_simulated_device_instance_from_root_simulation(
         simulation_ue.ipv4_address_private_address
     ue.ipv4_address_public_port = simulation_ue.ipv4_address_public_port
     ue.ipv6_address = simulation_ue.ipv6_address
+
+    return ue
+
+
+def get_device_instance_based_on_simulated_ue(
+    db: Session, root_simulation_id, simulated_ue_id
+):
+    simulation_instance = get_last_simulation_instance_from_root_simulation(
+        db=db,
+        root_simulation_id=root_simulation_id
+    )
+
+    simulated_ue = db.query(models.SimulationUE).filter(
+        models.SimulationUE.root_simulation == root_simulation_id,
+        models.SimulationUE.id == simulated_ue_id
+    ).first()
+
+    ue = db.query(models.SimulationUEInstance).filter(
+        models.SimulationUEInstance.simulation_instance ==
+        simulation_instance.id,
+        models.SimulationUEInstance.simulation_ue == simulated_ue.id
+    ).first()
+
+    ue.phone_number = simulated_ue.phone_number
+    ue.network_access_identifier = simulated_ue.network_access_identifier
+    ue.ipv4_address_public_address = simulated_ue.ipv4_address_public_address
+    ue.ipv4_address_private_address = \
+        simulated_ue.ipv4_address_private_address
+    ue.ipv4_address_public_port = simulated_ue.ipv4_address_public_port
+    ue.ipv6_address = simulated_ue.ipv6_address
 
     return ue
 

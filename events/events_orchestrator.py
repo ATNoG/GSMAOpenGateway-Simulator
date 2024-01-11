@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-07 11:17:37
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-10 11:45:06
+# @Last Modified time: 2024-01-11 11:56:19
 import sys
 import json
 import logging
@@ -11,6 +11,9 @@ from common.message_broker import connections_factory as PikaFactory
 from common.message_broker.topics import Topics
 from common.message_broker import schemas as MessageBrokerSchemas
 from geofencing_subscriptions_manager import GeofencingSubscriptionsManager
+from device_status_subscriptions_manager import (
+    DeviceStatusSubscriptionsManager
+)
 from common.simulation.simulation_types import SimulationType
 
 
@@ -20,6 +23,7 @@ def main():
 
     # Subscriptions Managers
     geofencing_subscriptions_manager = GeofencingSubscriptionsManager()
+    device_status_subscriptions_manager = DeviceStatusSubscriptionsManager()
 
     def events_callback(ch, method, properties, body):
 
@@ -34,6 +38,12 @@ def main():
             if simulation_data.simulation_type == SimulationType\
                     .DEVICE_LOCATION:
                 geofencing_subscriptions_manager.handle_ue_location_message(
+                    simulation_data
+                )
+
+            elif simulation_data.simulation_type == SimulationType\
+                    .DEVICE_STATUS:
+                device_status_subscriptions_manager.handle_ue_status_message(
                     simulation_data
                 )
 

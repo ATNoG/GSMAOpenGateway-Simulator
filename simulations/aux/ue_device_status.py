@@ -2,7 +2,7 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-06 22:13:23
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-09 19:50:24
+# @Last Modified time: 2024-01-10 17:51:11
 
 import time
 from datetime import datetime
@@ -109,5 +109,11 @@ class UEDeviceStatus():
         self.message_queue_channel.basic_publish(
             exchange='',
             routing_key=Topics.SIMULATION_DATA.value,
+            body=simulation_data.model_dump_json()
+        )
+
+        self.message_queue_channel.basic_publish(
+            exchange='',
+            routing_key=Topics.EVENTS.value,
             body=simulation_data.model_dump_json()
         )

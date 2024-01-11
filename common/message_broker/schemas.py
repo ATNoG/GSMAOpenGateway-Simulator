@@ -2,8 +2,8 @@
 # @Author: Rafael Direito
 # @Date:   2023-12-11 15:40:18
 # @Last Modified by:   Rafael Direito
-# @Last Modified time: 2024-01-09 19:49:13
-from pydantic import BaseModel, Field
+# @Last Modified time: 2024-01-11 14:21:12
+from pydantic import BaseModel, Field, Extra
 from typing import Any, Optional, List
 from common.simulation.simulation_types import SimulationType
 from common.simulation.simulation_operations import SimulationOperation
@@ -42,7 +42,7 @@ class SimulationData(BaseModel):
     simulation_instance_id: int
     child_simulation_instance_id: int
     simulation_type: SimulationType
-    data: Any  # Union in the future
+    data: Any
     scope: str = Field(default="SIMULATION_DATA")
 
 
@@ -52,7 +52,7 @@ class Subscription(BaseModel):
     subscription_type: SubscriptionType
 
 
-class DeviceStatusSimulationData(BaseModel):
+class DeviceStatusSimulationData(BaseModel, extra=Extra.allow):
     ue: int
     ue_instance: int
     connectivity_status: Optional[str] = Field(default=None)
